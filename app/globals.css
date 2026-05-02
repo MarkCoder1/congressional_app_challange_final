@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-border: #e5e7eb;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-primary: #171717;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #171717;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-accent: #3b82f6;
+  --color-accent-foreground: #f0f9ff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #f0f9ff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  @apply border-border;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-background text-foreground;
+}
+
+@layer components {
+  /* Navigation Links */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/20 active:scale-[0.98];
+  }
+
+  .sidebar-link.active {
+    @apply bg-accent text-accent-foreground shadow-sm;
+  }
+
+  /* Card Styling */
+  .card-base {
+    @apply bg-card border border-border rounded-lg transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply bg-card border border-border rounded-lg transition-all duration-200 hover:shadow-sm hover:border-accent/30 hover:-translate-y-0.5;
+  }
+
+  .card-interactive {
+    @apply bg-card border border-border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-sm hover:border-accent/30 hover:-translate-y-0.5;
+  }
+
+  /* Button Styling */
+  .btn-primary {
+    @apply px-4 py-2.5 bg-accent text-white rounded-lg font-medium text-sm transition-all duration-200 hover:opacity-90 active:scale-[0.98] hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium text-sm transition-all duration-200 hover:bg-secondary/80 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2.5 text-foreground rounded-lg font-medium text-sm transition-all duration-200 hover:bg-secondary active:scale-[0.98];
+  }
+
+  /* Tab Styling */
+  .tab-button {
+    @apply px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 border-transparent text-muted-foreground hover:text-foreground;
+  }
+
+  .tab-button.active {
+    @apply text-accent border-accent;
+  }
+
+  /* Status Badge */
+  .badge-status {
+    @apply inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-200;
+  }
+
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-200;
+  }
+
+  /* Hover Lift Effect */
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .fade-in-panel {
+    animation: fadeIn 180ms ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Focus State */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
+  }
 }
