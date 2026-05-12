@@ -1,0 +1,872 @@
+// /components/assignment/AssignmentWorkspace.tsx
+"use client";
+
+import { useState } from "react";
+import {
+    CheckCircle2,
+    Circle,
+    FileText,
+    Search,
+    CheckSquare,
+    Star,
+    ArrowRight,
+    ChevronLeft,
+    BookOpen,
+    GitBranch,
+    Lightbulb,
+    Target,
+    Link as LinkIcon,
+    Upload,
+    X,
+    ExternalLink,
+    Loader2,
+    Plus,
+    Trash2,
+    Sparkles,
+    Zap,
+    ClipboardList,
+} from "lucide-react";
+import { AssignmentContent } from "@/types/task";
+
+type Stage =
+    | "overview"
+    | "plan"
+    | "research"
+    | "execution"
+    | "checkpoints"
+    | "quality"
+    | "validation";
+
+interface ResearchItem {
+    id: string;
+    type: "link" | "note" | "text";
+    content: string;
+    tags: string[];
+    aiSummary?: string;
+}
+
+interface ExecutionStep {
+    id: string;
+    title: string;
+    completed: boolean;
+    estimatedTime?: number;
+}
+
+interface ValidationResult {
+    score: number;
+    feedback: string[];
+}
+
+interface AssignmentWorkspaceProps {
+    assignment: AssignmentContent;
+}
+
+export default function AssignmentWorkspace({ assignment }: AssignmentWorkspaceProps) {
+    // ----- Core workflow state -----
+    const [stage, setStage] = useState<Stage>("overview");
+    const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
+    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [finalOutput, setFinalOutput] = useState(assignment.submission?.text || "");
+    const taskId = (assignment as any).taskId ?? (assignment as any).id ?? "";
+
+    // ----- Multi‑source submission state (NOW RENDERED) -----
+    const [links, setLinks] = useState<string[]>(assignment.submission?.links || []);
+    const [newLink, setNewLink] = useState("");
+    const [files, setFiles] = useState<any[]>([]);
+    const [externalTools, setExternalTools] = useState<any[]>([]);
+    const [newToolType, setNewToolType] = useState<"canva" | "google-docs" | "figma" | "other">("canva");
+    const [newToolUrl, setNewToolUrl] = useState("");
+
+    // ----- 1. Research Board state -----
+    const [researchItems, setResearchItems] = useState<ResearchItem[]>([]);
+    const [newResearchContent, setNewResearchContent] = useState("");
+    const [researchType, setResearchType] = useState<"link" | "note" | "text">("text");
+    const [summarizingId, setSummarizingId] = useState<string | null>(null);
+
+    // ----- 2. Execution Builder state (steps) -----
+    const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
+    const [newStepTitle, setNewStepTitle] = useState("");
+    const [autoBuilding, setAutoBuilding] = useState(false);
+
+    // ----- 3. Live Quality Validator state -----
+    const [validatorInput, setValidatorInput] = useState("");
+    const [validatorResult, setValidatorResult] = useState<ValidationResult | null>(null);
+    const [validating, setValidating] = useState(false);
+    const [improvedText, setImprovedText] = useState("");
+
+    // ----- Progress calculation (overall assignment) -----
+    const totalPlanSteps = assignment.plan.steps.length;
+    const totalCheckpoints = assignment.checkpoints.length;
+    const stepsDone = Object.values(completedSteps).filter(Boolean).length;
+    const checkpointsDone = Object.values(answers).filter(a => a.trim().length > 0).length;
+
+    const hasText = finalOutput.trim().length > 0;
+    const hasLinks = links.length > 0;
+    const hasFiles = files.length > 0;
+    const hasTools = externalTools.length > 0;
+    const hasAnySubmission = hasText || hasLinks || hasFiles || hasTools;
+
+    const stepsWeight = 30;
+    const checkpointsWeight = 20;
+    const submissionWeight = 50;
+
+    const stepsProgress = (stepsDone / totalPlanSteps) * stepsWeight;
+    const checkpointsProgress = (checkpointsDone / totalCheckpoints) * checkpointsWeight;
+    const submissionProgress = hasAnySubmission ? submissionWeight : 0;
+
+    const progress = Math.min(100, Math.floor(stepsProgress + checkpointsProgress + submissionProgress));
+
+    // ----- Handlers for submission fields -----
+    const addLink = () => {
+        if (newLink.trim()) {
+            setLinks([...links, newLink.trim()]);
+            setNewLink("");
+        }
+    };
+    const removeLink = (idx: number) => setLinks(links.filter((_, i) => i !== idx));
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const uploaded = Array.from(e.target.files || []);
+        const newFiles = uploaded.map(file => ({
+            name: file.name,
+            type: file.type,
+            url: URL.createObjectURL(file),
+            fileObject: file,
+        }));
+        setFiles([...files, ...newFiles]);
+    };
+    const removeFile = (idx: number) => {
+        URL.revokeObjectURL(files[idx].url);
+        setFiles(files.filter((_, i) => i !== idx));
+    };
+
+    const addExternalTool = () => {
+        if (newToolUrl.trim()) {
+            setExternalTools([...externalTools, { type: newToolType, url: newToolUrl.trim() }]);
+            setNewToolUrl("");
+        }
+    };
+    const removeTool = (idx: number) => setExternalTools(externalTools.filter((_, i) => i !== idx));
+
+    const handleAnswerChange = (id: string, value: string) =>
+        setAnswers(prev => ({ ...prev, [id]: value }));
+
+    const handleStepToggle = (stepId: string) =>
+        setCompletedSteps(prev => ({ ...prev, [stepId]: !prev[stepId] }));
+
+    // ----- Research Board methods -----
+    const addResearchItem = () => {
+        if (!newResearchContent.trim()) return;
+        const newItem: ResearchItem = {
+            id: crypto.randomUUID(),
+            type: researchType,
+            content: newResearchContent.trim(),
+            tags: [],
+        };
+        setResearchItems([...researchItems, newItem]);
+        setNewResearchContent("");
+        summarizeItem(newItem.id, newItem.content, newItem.type);
+    };
+
+    const summarizeItem = async (id: string, content: string, type: string) => {
+        setSummarizingId(id);
+        try {
+            const res = await fetch("/api/ai/summarise-research", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content, type }),
+            });
+            const data = await res.json();
+            setResearchItems(prev =>
+                prev.map(item =>
+                    item.id === id ? { ...item, aiSummary: data.summary } : item
+                )
+            );
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSummarizingId(null);
+        }
+    };
+
+    const deleteResearchItem = (id: string) => {
+        setResearchItems(prev => prev.filter(item => item.id !== id));
+    };
+
+    const addTag = (id: string, tag: string) => {
+        setResearchItems(prev =>
+            prev.map(item =>
+                item.id === id ? { ...item, tags: [...item.tags, tag] } : item
+            )
+        );
+    };
+
+    // ----- Execution Builder methods -----
+    const addExecutionStep = () => {
+        if (!newStepTitle.trim()) return;
+        const newStep: ExecutionStep = {
+            id: crypto.randomUUID(),
+            title: newStepTitle.trim(),
+            completed: false,
+        };
+        setExecutionSteps([...executionSteps, newStep]);
+        setNewStepTitle("");
+    };
+
+    const toggleExecutionStep = (id: string) => {
+        setExecutionSteps(prev =>
+            prev.map(step => (step.id === id ? { ...step, completed: !step.completed } : step))
+        );
+    };
+
+    const deleteExecutionStep = (id: string) => {
+        setExecutionSteps(prev => prev.filter(step => step.id !== id));
+    };
+
+    const autoBuildPlan = async () => {
+        setAutoBuilding(true);
+        try {
+            const res = await fetch("/api/ai/build-execution-steps", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    assignmentGoal: assignment.goal,
+                    description: assignment.understanding.summary,
+                }),
+            });
+            const data = await res.json();
+            const newSteps = data.steps.map((title: string) => ({
+                id: crypto.randomUUID(),
+                title,
+                completed: false,
+            }));
+            setExecutionSteps([...executionSteps, ...newSteps]);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setAutoBuilding(false);
+        }
+    };
+
+    // ----- Live Quality Validator methods -----
+    const runValidation = async () => {
+        if (!validatorInput.trim()) return;
+        setValidating(true);
+        try {
+            const res = await fetch("/api/ai/validate-quality", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: validatorInput }),
+            });
+            const data = await res.json();
+            setValidatorResult({ score: data.score, feedback: data.feedback });
+        } catch (err) {
+            console.error(err);
+            setValidatorResult({ score: 0, feedback: ["Validation failed."] });
+        } finally {
+            setValidating(false);
+        }
+    };
+
+    const improveText = () => {
+        setImprovedText(validatorInput + "\n\n[AI‑improved version would appear here]");
+    };
+
+    // ----- Stage navigation -----
+    const stages: { id: Stage; label: string; icon: React.ReactNode }[] = [
+        { id: "overview", label: "Overview", icon: <BookOpen size={16} /> },
+        { id: "plan", label: "Plan", icon: <GitBranch size={16} /> },
+        { id: "research", label: "Research", icon: <Search size={16} /> },
+        { id: "execution", label: "Execution", icon: <FileText size={16} /> },
+        { id: "checkpoints", label: "Checkpoints", icon: <CheckSquare size={16} /> },
+        { id: "quality", label: "Quality", icon: <Zap size={16} /> },
+        { id: "validation", label: "Validation", icon: <Star size={16} /> },
+    ];
+
+    const nextStage = () => {
+        const idx = stages.findIndex(s => s.id === stage);
+        if (idx < stages.length - 1) setStage(stages[idx + 1].id);
+    };
+    const prevStage = () => {
+        const idx = stages.findIndex(s => s.id === stage);
+        if (idx > 0) setStage(stages[idx - 1].id);
+    };
+
+    // ----- Render each stage -----
+    const renderContent = () => {
+        switch (stage) {
+            case "overview":
+                return (
+                    <div className="space-y-6">
+                        <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl p-6 border border-border">
+                            <h3 className="text-xl font-bold mb-2">🎯 Goal</h3>
+                            <p className="text-foreground/80">{assignment.goal}</p>
+                        </div>
+                        <div className="bg-card rounded-xl p-6 border border-border">
+                            <h3 className="text-lg font-semibold mb-3">📖 Summary</h3>
+                            <p className="text-muted-foreground mb-4">{assignment.understanding.summary}</p>
+                            <h4 className="font-medium mb-2">✅ Success Criteria</h4>
+                            <ul className="space-y-2">
+                                {assignment.understanding.successCriteria.map((c, i) => (
+                                    <li key={i} className="flex items-start gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                                        <span className="text-sm">{c}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <button onClick={nextStage} className="btn-primary w-full flex items-center justify-center gap-2">
+                            Start Plan →
+                        </button>
+                    </div>
+                );
+
+            case "plan":
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">✍️ Plan</h2>
+                        <div className="space-y-3">
+                            {assignment.plan.steps.map(step => (
+                                <div
+                                    key={step.id}
+                                    className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-accent/30 transition"
+                                >
+                                    <button onClick={() => handleStepToggle(step.id)} className="flex-shrink-0 mt-0.5">
+                                        {completedSteps[step.id] ? (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        ) : (
+                                            <Circle className="w-5 h-5 text-muted-foreground" />
+                                        )}
+                                    </button>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold">{step.title}</h3>
+                                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={nextStage} className="btn-primary flex items-center gap-2">
+                                Continue to Research →
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case "research":
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">🔍 Research Board</h2>
+                        <div className="bg-card rounded-xl p-5 border border-border">
+                            <div className="flex gap-2 mb-4">
+                                <select
+                                    value={researchType}
+                                    onChange={(e) => setResearchType(e.target.value as any)}
+                                    className="px-2 py-1 rounded-md border border-border bg-background"
+                                >
+                                    <option value="text">Text note</option>
+                                    <option value="link">Link</option>
+                                    <option value="note">Quick note</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    value={newResearchContent}
+                                    onChange={(e) => setNewResearchContent(e.target.value)}
+                                    placeholder={researchType === "link" ? "Paste URL..." : "Write your note..."}
+                                    className="flex-1 p-2 rounded-md border border-border bg-background"
+                                />
+                                <button onClick={addResearchItem} className="btn-secondary px-3 py-1">
+                                    Add
+                                </button>
+                            </div>
+                            {researchItems.length === 0 && (
+                                <p className="text-muted-foreground text-center py-4">
+                                    No research items yet. Add notes, links, or text snippets.
+                                </p>
+                            )}
+                            <div className="space-y-3">
+                                {researchItems.map(item => (
+                                    <div key={item.id} className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    {item.type === "link" && <LinkIcon size={14} />}
+                                                    {item.type === "text" && <FileText size={14} />}
+                                                    {item.type === "note" && <Sparkles size={14} />}
+                                                    <span className="text-sm font-mono text-muted-foreground">{item.type}</span>
+                                                </div>
+                                                <p className="text-sm break-words">{item.content}</p>
+                                                {item.aiSummary && (
+                                                    <div className="mt-2 p-2 bg-accent/10 rounded text-xs text-accent">
+                                                        🤖 {item.aiSummary}
+                                                    </div>
+                                                )}
+                                                {summarizingId === item.id && (
+                                                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Loader2 size={12} className="animate-spin" /> AI summarizing...
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-1.5 py-0.5 bg-secondary rounded text-xs">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                    <button
+                                                        onClick={() => addTag(item.id, "important")}
+                                                        className="text-xs text-muted-foreground hover:text-accent"
+                                                    >
+                                                        +tag
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => deleteResearchItem(item.id)}
+                                                className="text-muted-foreground hover:text-red-500"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={nextStage} className="btn-primary flex items-center gap-2">
+                                Continue to Execution →
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case "execution":
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">📝 Execution + Submission</h2>
+
+                        {/* Step Builder (optional) */}
+                        <div className="bg-card rounded-xl p-5 border border-border">
+                            <h3 className="font-semibold mb-3">🗂️ Step‑by‑step plan (optional)</h3>
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    type="text"
+                                    value={newStepTitle}
+                                    onChange={(e) => setNewStepTitle(e.target.value)}
+                                    placeholder="Add a custom step"
+                                    className="flex-1 p-2 rounded-md border border-border bg-background"
+                                />
+                                <button onClick={addExecutionStep} className="btn-secondary px-3 py-1 flex items-center gap-1">
+                                    <Plus size={16} /> Add
+                                </button>
+                            </div>
+                            <button
+                                onClick={autoBuildPlan}
+                                disabled={autoBuilding}
+                                className="mb-4 text-sm text-accent hover:underline flex items-center gap-1"
+                            >
+                                <Sparkles size={14} /> {autoBuilding ? "Building..." : "Auto‑build plan from assignment"}
+                            </button>
+                            {executionSteps.length > 0 && (
+                                <div className="space-y-2">
+                                    {executionSteps.map(step => (
+                                        <div key={step.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
+                                            <button onClick={() => toggleExecutionStep(step.id)} className="flex-shrink-0">
+                                                {step.completed ? (
+                                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                                ) : (
+                                                    <Circle className="w-5 h-5 text-muted-foreground" />
+                                                )}
+                                            </button>
+                                            <span className={`flex-1 text-sm ${step.completed ? "line-through text-muted-foreground" : ""}`}>
+                                                {step.title}
+                                            </span>
+                                            <button onClick={() => deleteExecutionStep(step.id)} className="text-muted-foreground hover:text-red-500">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div className="mt-2 text-right text-xs text-muted-foreground">
+                                        {executionSteps.filter(s => s.completed).length} / {executionSteps.length} completed
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- ACTUAL SUBMISSION UI (WAS MISSING) --- */}
+                        <div className="bg-card rounded-xl p-5 border border-border space-y-6">
+                            <h3 className="font-semibold mb-2">📄 Your work (required)</h3>
+
+                            {/* Text submission */}
+                            <div>
+                                <label className="block font-medium mb-1">Written answer</label>
+                                <textarea
+                                    value={finalOutput}
+                                    onChange={(e) => setFinalOutput(e.target.value)}
+                                    rows={6}
+                                    className="w-full p-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-accent"
+                                    placeholder="Write your assignment here..."
+                                />
+                            </div>
+
+                            {/* Links */}
+                            <div>
+                                <label className="block font-medium mb-1">🔗 Research links</label>
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="url"
+                                        value={newLink}
+                                        onChange={(e) => setNewLink(e.target.value)}
+                                        placeholder="https://..."
+                                        className="flex-1 p-2 rounded-md border border-border bg-background"
+                                    />
+                                    <button onClick={addLink} className="btn-secondary px-3 py-1 text-sm">Add link</button>
+                                </div>
+                                {links.length > 0 && (
+                                    <ul className="space-y-1">
+                                        {links.map((link, idx) => (
+                                            <li key={idx} className="flex items-center justify-between gap-2 p-2 bg-secondary/20 rounded-lg">
+                                                <a href={link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline text-sm truncate">
+                                                    {link}
+                                                </a>
+                                                <button onClick={() => removeLink(idx)} className="text-muted-foreground hover:text-red-500">
+                                                    <X size={16} />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            {/* Files */}
+                            <div>
+                                <label className="block font-medium mb-1">📎 Attachments</label>
+                                <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.docx,.jpg,.png"
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        id="file-upload"
+                                    />
+                                    <label htmlFor="file-upload" className="cursor-pointer inline-flex items-center gap-2 text-accent hover:underline">
+                                        <Upload size={16} /> Click to upload PDF, DOCX, or images
+                                    </label>
+                                </div>
+                                {files.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        {files.map((file, idx) => (
+                                            <div key={idx} className="flex items-center justify-between gap-2 p-2 bg-secondary/20 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <FileText size={14} />
+                                                    <span className="text-sm truncate">{file.name}</span>
+                                                </div>
+                                                <button onClick={() => removeFile(idx)} className="text-muted-foreground hover:text-red-500">
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* External tools */}
+                            <div>
+                                <label className="block font-medium mb-1">🛠️ External tools (Canva, Google Docs, Figma, etc.)</label>
+                                <div className="flex gap-2 mb-2">
+                                    <select
+                                        value={newToolType}
+                                        onChange={(e) => setNewToolType(e.target.value as any)}
+                                        className="px-2 py-1 rounded-md border border-border bg-background"
+                                    >
+                                        <option value="canva">Canva</option>
+                                        <option value="google-docs">Google Docs</option>
+                                        <option value="figma">Figma</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <input
+                                        type="url"
+                                        value={newToolUrl}
+                                        onChange={(e) => setNewToolUrl(e.target.value)}
+                                        placeholder="Link to your work"
+                                        className="flex-1 p-2 rounded-md border border-border bg-background"
+                                    />
+                                    <button onClick={addExternalTool} className="btn-secondary px-3 py-1 text-sm">Add</button>
+                                </div>
+                                {externalTools.length > 0 && (
+                                    <ul className="space-y-1">
+                                        {externalTools.map((tool, idx) => (
+                                            <li key={idx} className="flex items-center justify-between gap-2 p-2 bg-secondary/20 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-medium capitalize">{tool.type}</span>
+                                                    <a href={tool.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline text-sm truncate">
+                                                        {tool.url}
+                                                    </a>
+                                                </div>
+                                                <button onClick={() => removeTool(idx)} className="text-muted-foreground hover:text-red-500">
+                                                    <X size={16} />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between gap-3 mt-6">
+                            <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={nextStage} className="btn-primary flex items-center gap-2">
+                                Go to Checkpoints →
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case "checkpoints":
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">✅ Self‑Checkpoints</h2>
+                        <div className="space-y-4">
+                            {assignment.checkpoints.map(cp => (
+                                <div key={cp.id} className="bg-card rounded-xl p-5 border border-border">
+                                    <p className="font-medium mb-2">{cp.question}</p>
+                                    {cp.expectedAnswerHint && (
+                                        <p className="text-sm text-muted-foreground mb-3">💡 Hint: {cp.expectedAnswerHint}</p>
+                                    )}
+                                    <textarea
+                                        value={answers[cp.id] || ""}
+                                        onChange={(e) => handleAnswerChange(cp.id, e.target.value)}
+                                        rows={2}
+                                        className="w-full p-2 rounded-md border border-border bg-background focus:ring-1 focus:ring-accent"
+                                        placeholder="Your answer..."
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={nextStage} className="btn-primary flex items-center gap-2">
+                                Validate & Improve →
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case "quality":
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">✨ Live Quality Validator</h2>
+                        <div className="bg-card rounded-xl p-5 border border-border">
+                            <textarea
+                                value={validatorInput}
+                                onChange={(e) => setValidatorInput(e.target.value)}
+                                rows={6}
+                                className="w-full p-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-accent"
+                                placeholder="Paste your written work here to get instant AI feedback..."
+                            />
+                            <div className="flex gap-3 mt-4">
+                                <button
+                                    onClick={runValidation}
+                                    disabled={validating}
+                                    className="btn-primary flex items-center gap-2"
+                                >
+                                    {validating ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />} Validate
+                                </button>
+                                {validatorResult && (
+                                    <button onClick={improveText} className="btn-secondary flex items-center gap-2">
+                                        <Sparkles size={16} /> Improve it
+                                    </button>
+                                )}
+                            </div>
+                            {validatorResult && (
+                                <div className="mt-6 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold">Quality score</span>
+                                        <span className="text-2xl font-bold text-accent">{validatorResult.score}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                                        <div className="h-full bg-accent rounded-full" style={{ width: `${validatorResult.score}%` }} />
+                                    </div>
+                                    <div className="bg-secondary/20 rounded-lg p-4">
+                                        <h3 className="font-medium mb-2">3 key improvements</h3>
+                                        <ul className="list-disc list-inside space-y-1 text-sm">
+                                            {validatorResult.feedback.map((fb, i) => (
+                                                <li key={i}>{fb}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    {improvedText && (
+                                        <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 border border-green-200">
+                                            <h3 className="font-medium mb-2">✨ Suggested rewrite</h3>
+                                            <p className="text-sm">{improvedText}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={nextStage} className="btn-primary flex items-center gap-2">
+                                Final Validation →
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case "validation": {
+                // Local state for submission feedback
+                const [submitting, setSubmitting] = useState(false);
+                const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+                const handleFinalSubmit = async () => {
+                    setSubmitting(true);
+                    setSubmitMessage(null);
+                    try {
+                        const res = await fetch("/api/assignment/submit", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                taskId: taskId, // you must pass taskId from parent component
+                                finalOutput,
+                                links,
+                                files: files.map(f => ({ name: f.name, type: f.type, url: f.url })),
+                                externalTools,
+                                answers,
+                            }),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            setSubmitMessage("✅ Assignment submitted successfully! Your work has been recorded.");
+                        } else {
+                            setSubmitMessage("❌ " + data.message);
+                        }
+                    } catch (err) {
+                        setSubmitMessage("❌ Network error. Please try again.");
+                    } finally {
+                        setSubmitting(false);
+                    }
+                };
+
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">📊 Final Validation</h2>
+                        <div className="bg-card rounded-xl p-6 border border-border space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="font-medium">Overall progress</span>
+                                <span className="text-2xl font-bold text-accent">{progress}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                                <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${progress}%` }} />
+                            </div>
+
+                            <div className="mt-4 p-4 bg-secondary/20 rounded-lg">
+                                <h3 className="font-semibold mb-2">Submission summary</h3>
+                                <ul className="space-y-1 text-sm">
+                                    <li>✍️ Written work: {finalOutput.trim().length > 0 ? "Provided" : "Missing"}</li>
+                                    <li>🔗 Links added: {links.length}</li>
+                                    <li>📎 Attachments: {files.length}</li>
+                                    <li>🛠️ External tools: {externalTools.length}</li>
+                                </ul>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <h3 className="font-semibold mb-2">✅ Checklist</h3>
+                                    <ul className="space-y-1">
+                                        {assignment.validation.checklist.map((item, i) => (
+                                            <li key={i} className="text-sm flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold mb-2">📐 Rubric</h3>
+                                    <div className="space-y-1 text-sm">
+                                        <div>Clarity: {assignment.validation.rubric.clarity}%</div>
+                                        <div>Completeness: {assignment.validation.rubric.completeness}%</div>
+                                        <div>Structure: {assignment.validation.rubric.structure}%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between gap-3 pt-4">
+                                <button onClick={prevStage} className="btn-secondary flex items-center gap-1">
+                                    <ChevronLeft size={16} /> Back
+                                </button>
+                                <button
+                                    onClick={handleFinalSubmit}
+                                    disabled={submitting}
+                                    className="btn-primary flex items-center gap-2"
+                                >
+                                    {submitting ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
+                                    {submitting ? "Submitting..." : "Final Submission"}
+                                </button>
+                            </div>
+                            {submitMessage && (
+                                <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 text-green-800 dark:text-green-400 text-sm">
+                                    {submitMessage}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto py-6 space-y-6">
+            {/* Progress bar */}
+            <div className="bg-card rounded-xl p-4 border border-border">
+                <div className="flex justify-between text-sm text-muted-foreground mb-2">
+                    <span>Assignment progress</span>
+                    <span>{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                </div>
+            </div>
+
+            {/* Stage stepper */}
+            <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+                {stages.map(s => (
+                    <button
+                        key={s.id}
+                        onClick={() => setStage(s.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${stage === s.id
+                            ? "bg-accent text-white shadow-md"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                            }`}
+                    >
+                        {s.icon}
+                        {s.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Stage content */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 min-h-[500px] transition-all">
+                {renderContent()}
+            </div>
+        </div>
+    );
+}
+
+old assignment component

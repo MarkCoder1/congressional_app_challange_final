@@ -2,7 +2,7 @@
 
 import { Clock, BookOpen, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { mockTasks } from "@/lib/mockTasks";
+import { getTasks } from "@/lib/storage";
 import { getTaskRoute, getTaskTypeLabel } from "@/lib/navigation";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -41,9 +41,9 @@ const todaySchedule = [
 ];
 
 export default function Dashboard() {
-  // Get featured task (first one) as next action
-  const nextAction = mockTasks[0];
-  const upNext = mockTasks.slice(1);
+  const tasks = getTasks();
+  const nextAction = tasks[0];
+  const upNext = tasks.slice(1);
 
   if (!nextAction) {
     return (
@@ -96,12 +96,12 @@ export default function Dashboard() {
 
               {/* Task Type */}
               <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">
-                {getTaskTypeLabel(nextAction.taskType)}
+                {/* {getTaskTypeLabel(nextAction.taskType)} */}
               </span>
 
               {/* Deadline */}
               <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">
-                {nextAction.deadline}
+                {/* {nextAction.deadline} */}
               </span>
             </div>
 
@@ -113,14 +113,16 @@ export default function Dashboard() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href={getTaskRoute(nextAction)}
+                // href={getTaskRoute(nextAction)}
+                href="#"
                 className="flex-1 btn-primary flex items-center justify-center gap-2 group/btn"
               >
                 <span>Start Now</span>
                 <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link
-                href={getTaskRoute(nextAction)}
+                // href={getTaskRoute(nextAction)}
+                href="#"
                 className="flex-1 btn-ghost border border-border hover:border-accent/50"
               >
                 Open Task
@@ -137,7 +139,8 @@ export default function Dashboard() {
               {upNext.map((task) => (
                 <Link
                   key={task.id}
-                  href={getTaskRoute(task)}
+                  // href={getTaskRoute(task)}
+                  href="#"
                   className="block group"
                 >
                   <div className="card-interactive bg-card border border-border rounded-lg p-4 active:scale-[0.98]">
@@ -147,13 +150,13 @@ export default function Dashboard() {
                           {task.title}
                         </h5>
                         <p className="text-sm text-muted-foreground mt-1.5">
-                          {task.subject} • {getTaskTypeLabel(task.taskType)}
+                          {/* {task.subject} • {getTaskTypeLabel(task.taskType)} */}
                         </p>
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-accent">
-                            {Math.round(task.progress)}%
+                            {/* {Math.round(task.progress)}% */}
                           </span>
                           <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
                             <CheckCircle2 size={16} className="text-accent" />

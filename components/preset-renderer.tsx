@@ -52,7 +52,7 @@ export function PresetRenderer({ subject, taskTitle }: PresetRendererProps) {
 
       <div className="bg-card rounded-lg border border-border p-6">
         {selectedPreset ? (
-          <VisualRenderer type={selectedPreset.type} data={toVisualData(selectedPreset)} />
+          <VisualRenderer data={toVisualData(selectedPreset) as any} />
         ) : (
           <p className="text-sm text-muted-foreground">
             Select a learning perspective to view content.

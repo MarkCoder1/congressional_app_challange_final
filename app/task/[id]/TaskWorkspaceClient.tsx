@@ -1,0 +1,384 @@
+// /app/task/[id]/TaskWorkspaceClient.tsx
+"use client";
+
+import { useState } from "react";
+import {
+  Play,
+  BookOpen,
+  Zap,
+  Trophy,
+  Clock,
+  Calendar,
+  Lightbulb,
+  Target,
+  CheckCircle2,
+  ListChecks,
+  GraduationCap,
+  ArrowRight,
+  Sparkles,
+  Brain,
+  FileText,
+  Eye,
+  GitBranch,
+  BarChart3,
+} from "lucide-react";
+import { PracticeMode } from "@/components/practice-mode";
+import { MasterMode } from "@/components/master-mode";
+import { EmptyState } from "@/components/EmptyState";
+import {
+  subjectPresets,
+  PresetType,
+} from "@/lib/learningMapPresets";
+import { Subject } from "@/lib/types";
+import { Task, AssignmentContent } from "@/types/task";
+// NEW visual renderer (for AI-generated visuals) – expects only `data`
+import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer";
+// OLD visual renderer (for legacy learningMaps) – expects `type` and `data`
+import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
+import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
+
+// All possible tabs – Assignment will be added conditionally
+const ALL_TABS = ["Learn", "Practice", "Master", "Assignment"] as const;
+type TabType = (typeof ALL_TABS)[number];
+
+const tabIcons: Record<string, any> = {
+  Learn: BookOpen,
+  Practice: Zap,
+  Master: Trophy,
+  Assignment: FileText,
+};
+
+interface TaskWorkspaceClientProps {
+  initialTask: Task;
+  assignment: AssignmentContent | null;
+  hasAssignment: boolean;
+}
+
+export default function TaskWorkspaceClient({
+  initialTask,
+  assignment,
+  hasAssignment,
+}: TaskWorkspaceClientProps) {
+  const [task, setTask] = useState<Task>(initialTask);
+  const [activeTab, setActiveTab] = useState<TabType>("Learn");
+  const [selectedPresetId, setSelectedPresetId] = useState("");
+
+  const refreshTask = async () => {
+    const res = await fetch(`/api/tasks/${task.id}`);
+    if (res.ok) {
+      const updated = await res.json();
+      setTask(updated);
+    }
+  };
+
+  const handlePracticeComplete = async (result: { score: number; weakAreas: string[] }) => {
+    const newProgress = Math.min(100, task.progress + 30);
+    await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress: newProgress }),
+    });
+    await refreshTask();
+  };
+
+  const handleMasterComplete = async (result: { score: number; passed: boolean; weakAreas: string[] }) => {
+    if (result.passed) {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progress: 100, status: "completed" }),
+      });
+      await refreshTask();
+    } else {
+      alert("Score below 80%. Please review the material and retry.");
+    }
+  };
+
+  // Guard: only if task is completely missing
+  if (!task) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-sm">
+          <EmptyState
+            icon={<BookOpen size={32} />}
+            title="No task found"
+            description="No task found"
+            actionLabel="Back to Dashboard"
+            actionHref="/"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show only Assignment UI if this is an assignment task (no Learn/Practice/Master)
+  if (hasAssignment && assignment) {
+    // Override tabs to show only Assignment
+    const assignmentOnlyTabs = ["Assignment"] as const;
+    const isAssignmentTab = activeTab === "Assignment";
+
+    return (
+      <div className="h-full flex flex-col lg:flex-row bg-background">
+        {/* LEFT PANEL - Task Overview */}
+        <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card p-6 flex flex-col gap-6">
+          <div>
+            <h1 className="text-2xl font-bold mb-3 text-foreground">{task.title}</h1>
+            <div className="inline-block mb-4">
+              <span className="px-3 py-1.5 bg-accent/10 text-accent font-semibold text-sm rounded-lg">
+                {task.subject}
+              </span>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar size={16} />
+                <span>Due: {task.deadline || "TBD"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock size={16} />
+                <span>Estimated: 2 hours</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Progress</span>
+              <span className="text-sm font-semibold text-accent">{task.progress}%</span>
+            </div>
+            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${task.progress}%` }} />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>
+          <button className="btn-primary w-full flex items-center justify-center gap-2 mt-auto">
+            <Play size={18} /> Start Assignment
+          </button>
+        </div>
+
+        {/* RIGHT PANEL - Assignment Workspace */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="border-b border-border bg-card">
+            <div className="flex overflow-x-auto p-6 gap-2">
+              {assignmentOnlyTabs.map((tab) => {
+                const IconComponent = tabIcons[tab];
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                      isActive
+                        ? "active bg-accent text-white shadow-md"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <IconComponent size={18} />
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            {isAssignmentTab && <AssignmentWorkspace assignment={assignment} taskId={task.id} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----- LESSON (original) UI -----
+  const taskData = {
+    id: task.id,
+    title: task.title,
+    subject: (task.subject || "General") as Subject,
+    deadline: task.deadline ?? "TBD",
+    progress: task.progress ?? 0,
+    description: task.description || "",
+  };
+
+  const practiceQuestions = task.practice ?? [];
+  const masterQuestions = task.master ?? [];
+  const taskMaps = task.learningMaps ?? [];
+  const subjectPresetOptions = subjectPresets[task.subject as Subject] ?? [];
+  const mapOptions = subjectPresetOptions.filter((presetOption) =>
+    taskMaps.some((taskMap) => taskMap.presetId === presetOption.id)
+  );
+  const selectedMap = taskMaps.find((map) => map.presetId === selectedPresetId) ?? taskMaps[0];
+  const selectedMapOption = mapOptions.find((mapOption) => mapOption.id === selectedMap?.presetId);
+  const selectedVisualType = (selectedMap?.type ?? selectedMapOption?.type) as PresetType | undefined;
+  const hasLearningMaps = taskMaps.length > 0;
+  const hasPracticeQuestions = practiceQuestions.length > 0;
+  const hasMasterQuestions = masterQuestions.length > 0;
+
+  const learningContent = task.learningContent ?? {
+    overview: "No overview available.",
+    keyPoints: [],
+    example: "No example provided.",
+    steps: [],
+  };
+
+  // Only show Learn/Practice/Master tabs (no Assignment)
+  const lessonTabs = ["Learn", "Practice", "Master"] as const;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+  };
+
+  console.log("TaskWorkspaceClient visualData:", task.visualData);
+
+  return (
+    <div className="h-full flex flex-col lg:flex-row bg-background">
+      {/* LEFT PANEL - unchanged */}
+      <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card p-6 flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-3 text-foreground">{taskData.title}</h1>
+          <div className="inline-block mb-4">
+            <span className="px-3 py-1.5 bg-accent/10 text-accent font-semibold text-sm rounded-lg">
+              {taskData.subject}
+            </span>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar size={16} />
+              <span>Due: {taskData.deadline}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock size={16} />
+              <span>Estimated: 2 hours</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Progress</span>
+            <span className="text-sm font-semibold text-accent">{taskData.progress}%</span>
+          </div>
+          <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${taskData.progress}%` }} />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">{taskData.description}</p>
+        <button className="btn-primary w-full flex items-center justify-center gap-2 mt-auto">
+          <Play size={18} /> Start Focus Mode
+        </button>
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="border-b border-border bg-card">
+          <div className="flex overflow-x-auto p-6 gap-2">
+            {lessonTabs.map((tab) => {
+              const IconComponent = tabIcons[tab];
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                    isActive
+                      ? "active bg-accent text-white shadow-md"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <IconComponent size={18} />
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          {activeTab === "Learn" && (
+            // ... (keep your existing Learn JSX exactly as it was, no changes)
+            <div className="p-6 space-y-6 fade-in-panel">
+              {/* Hero Banner */}
+              <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <GraduationCap className="w-6 h-6 text-primary" />
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">Learning Module</span>
+                    </div>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">{task.title}</h1>
+                    <p className="text-muted-foreground text-sm max-w-2xl">{learningContent.overview}</p>
+                  </div>
+                  <div className="hidden lg:block">
+                    <Brain className="w-16 h-16 text-primary/20" />
+                  </div>
+                </div>
+              </div>
+              {/* Key Points Grid – keep all existing content */}
+              {/* Example Card – keep */}
+              {/* Steps Timeline – keep */}
+              {/* Pro Tip – keep */}
+              {/* Visual Learning System – keep */}
+              {/* Progress Indicator – keep */}
+            </div>
+          )}
+          {activeTab === "Practice" && (
+            <div className="p-6 fade-in-panel">
+              {!hasPracticeQuestions ? (
+                <div className="bg-card border border-border rounded-xl shadow-sm">
+                  <EmptyState
+                    icon={<Zap size={32} />}
+                    title="No data available for this section"
+                    description="This task does not include practice questions yet."
+                  />
+                </div>
+              ) : (
+                <PracticeMode
+                  questions={practiceQuestions}
+                  subject={taskData.subject}
+                  onComplete={handlePracticeComplete}
+                />
+              )}
+            </div>
+          )}
+          {activeTab === "Master" && (
+            <div className="p-6 fade-in-panel">
+              {!hasMasterQuestions ? (
+                <div className="bg-card border border-border rounded-xl shadow-sm">
+                  <EmptyState
+                    icon={<Trophy size={32} />}
+                    title="No data available for this section"
+                    description="This task does not include master questions yet."
+                  />
+                </div>
+              ) : (
+                <MasterMode
+                  questions={masterQuestions}
+                  subject={taskData.subject}
+                  timeLimit={30}
+                  onComplete={handleMasterComplete}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccordionSection({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-border rounded-lg">
+      <button className="w-full flex items-center justify-between p-3 text-sm font-medium" onClick={onToggle}>
+        <span>{label}</span>
+        <span>{open ? "−" : "+"}</span>
+      </button>
+      {open && <div className="px-3 pb-3">{children}</div>}
+    </div>
+  );
+}

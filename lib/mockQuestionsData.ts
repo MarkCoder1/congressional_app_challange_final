@@ -12,7 +12,6 @@ export const mockPracticeQuestions: PracticeQuestion[] = [
     id: "p1",
     text: "Solve the equation: 2x² - 7x + 3 = 0",
     hint: "Use the quadratic formula. Here a=2, b=-7, c=3",
-    expectedAnswer: "x = 3 and x = 0.5",
     explanation:
       "Using the quadratic formula x = (-b ± √(b²-4ac)) / 2a, we get x = 3 and x = 0.5",
     category: "Quadratic Equations",
@@ -55,7 +54,6 @@ export const mockPracticeQuestions: PracticeQuestion[] = [
     id: "p2",
     text: "Convert to vertex form: f(x) = x² - 6x + 5",
     hint: "Complete the square by grouping x terms",
-    expectedAnswer: "f(x) = (x - 3)² - 4",
     explanation:
       "By completing the square, f(x) = (x - 3)² - 4. Vertex is at (3, -4)",
     category: "Quadratic Forms",
@@ -98,7 +96,6 @@ export const mockPracticeQuestions: PracticeQuestion[] = [
     id: "p3",
     text: "What are the main causes of World War I?",
     hint: "Use the acronym MAIN",
-    expectedAnswer: "Militarism, Alliances, Imperialism, Nationalism",
     explanation:
       "The four main factors leading to WWI: Militarism (arms race), Alliances (triple alliance), Imperialism (colonial competition), and Nationalism (pride and conflict)",
     category: "Historical Causes",
@@ -142,8 +139,7 @@ export const mockPracticeQuestions: PracticeQuestion[] = [
     id: "p4",
     text: "Describe photosynthesis in simple terms",
     hint: "What goes in? What comes out?",
-    expectedAnswer:
-      "Plants convert sunlight, water, and carbon dioxide into glucose and oxygen",
+
     explanation:
       "Photosynthesis is the process where plants use light energy to convert CO₂ and H₂O into glucose (food) and O₂ (byproduct). This happens in chloroplasts.",
     category: "Photosynthesis",
@@ -186,7 +182,6 @@ export const mockPracticeQuestions: PracticeQuestion[] = [
     id: "p5",
     text: "Calculate: sin(30°) = ?",
     hint: "Use the unit circle or special angle values",
-    expectedAnswer: "0.5 or 1/2",
     explanation:
       "sin(30°) = 1/2 = 0.5. This is a special angle you should memorize.",
     category: "Trigonometry",
@@ -232,7 +227,6 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m1",
     text: "Solve the quadratic equation and explain your method: 3x² + 12x + 12 = 0",
-    expectedAnswer: "x = -2 (double root). Use factoring: 3(x + 2)² = 0",
     explanation:
       "First factor out 3: 3(x² + 4x + 4) = 0. Recognize x² + 4x + 4 = (x + 2)². So (x + 2)² = 0, giving x = -2.",
     category: "Quadratic Equations",
@@ -241,8 +235,7 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m2",
     text: "Analyze the graph of f(x) = -(x - 2)² + 5. Identify vertex, axis of symmetry, and direction.",
-    expectedAnswer:
-      "Vertex: (2, 5), Axis of symmetry: x = 2, Opens downward (a = -1 < 0)",
+
     explanation:
       "In vertex form f(x) = a(x - h)² + k, the vertex is (h, k) = (2, 5), axis of symmetry is x = h = 2, and since a = -1 < 0, the parabola opens downward.",
     category: "Parabola Analysis",
@@ -251,8 +244,7 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m3",
     text: "Compare and contrast the causes and effects of WWI and WWII. How did WWI lead to WWII?",
-    expectedAnswer:
-      "WWI causes (MAIN) vs WWII causes (fascism, reparations, economic crisis). Treaty of Versailles harsh reparations → economic resentment in Germany → rise of Nazi party → WWII",
+
     explanation:
       "The Treaty of Versailles imposed severe penalties on Germany. Economic hardship, national humiliation, and resentment created conditions for extremist movements. Hitler exploited this to gain power.",
     category: "World Wars Analysis",
@@ -261,8 +253,7 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m4",
     text: "Explain how photosynthesis and cellular respiration are complementary processes. Write both equations.",
-    expectedAnswer:
-      "Photosynthesis: 6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂. Respiration: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + energy. They are chemical opposites.",
+
     explanation:
       "Photosynthesis stores energy in glucose; respiration releases it. The products of one are reactants of the other. Together they sustain life.",
     category: "Energy Processes",
@@ -271,8 +262,7 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m5",
     text: "Derive and explain the Law of Cosines: c² = a² + b² - 2ab·cos(C)",
-    expectedAnswer:
-      "Use vectors or coordinate geometry. Place triangle in coordinate system and use distance formula. The law generalizes Pythagorean theorem when angle C ≠ 90°.",
+
     explanation:
       "The Law of Cosines generalizes the Pythagorean theorem. When C = 90°, cos(90°) = 0, so c² = a² + b². For other angles, the -2ab·cos(C) term adjusts for the angle.",
     category: "Trigonometry",
@@ -281,8 +271,7 @@ export const mockMasterQuestions: MasterQuestion[] = [
   {
     id: "m6",
     text: "A population grows exponentially at 5% per year. If you start with 1000, when will it reach 2000?",
-    expectedAnswer:
-      "Approximately 14.2 years. Use: 2000 = 1000(1.05)^t, solve for t ≈ log(2)/log(1.05) ≈ 14.2",
+
     explanation:
       "For exponential growth A = P(1 + r)^t, we solve 2 = (1.05)^t by taking logarithms: t = log(2)/log(1.05) ≈ 14.2 years",
     category: "Exponential Functions",

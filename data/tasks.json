@@ -1,0 +1,217 @@
+[
+  {
+    "id": "1",
+    "title": "Quadratic Functions & Equations",
+    "subject": "Math",
+    "taskType": "mixed",
+    "description": "Master the fundamentals of quadratic functions, solving equations, and graphing parabolas.",
+    "deadline": "2026-05-10",
+    "priority": "high",
+    "progress": 45,
+    "createdAt": "2026-04-28",
+    "resources": {
+      "text": "Quadratic functions reference notes",
+      "urls": ["https://example.com/quadratics"],
+      "files": []
+    },
+    "learningContent": {
+      "overview": "Quadratic functions model curved relationships and help solve root and optimization problems.",
+      "keyPoints": ["Standard form is ax^2 + bx + c", "Graph is a parabola", "Use factoring or formula"],
+      "example": "x^2 - 5x + 6 = 0 factors to (x - 2)(x - 3)",
+      "steps": ["Write equation in standard form", "Pick a strategy", "Solve and verify"]
+    },
+    "learningMaps": [
+      {
+        "presetId": "graph-behavior",
+        "subject": "Math",
+        "type": "graph",
+        "data": {
+          "points": [
+            { "x": -2, "y": 15 },
+            { "x": -1, "y": 8 },
+            { "x": 0, "y": 3 },
+            { "x": 1, "y": 0 },
+            { "x": 2, "y": -1 },
+            { "x": 3, "y": 0 },
+            { "x": 4, "y": 3 }
+          ],
+          "equation": "y = x^2 - 4x + 3",
+          "xLabel": "x",
+          "yLabel": "y"
+        }
+      },
+      {
+        "presetId": "solving-methods",
+        "subject": "Math",
+        "type": "flow",
+        "data": {
+          "steps": [
+            { "title": "Standard Form", "description": "Write as ax^2 + bx + c = 0" },
+            { "title": "Choose Method", "description": "Factoring or formula" },
+            { "title": "Solve Roots", "description": "Compute valid roots" }
+          ]
+        }
+      }
+    ],
+    "practice": [
+      {
+        "id": "math-p1",
+        "text": "Solve x^2 + 5x + 6 = 0",
+        "hint": "Try factoring",
+        "expectedAnswer": "-2, -3",
+        "explanation": "Factor into (x + 2)(x + 3) = 0",
+        "category": "Factoring"
+      }
+    ],
+    "master": [
+      {
+        "id": "math-m1",
+        "text": "Find roots of x^2 - 4x + 4 = 0",
+        "expectedAnswer": "2",
+        "explanation": "Perfect square (x - 2)^2 = 0",
+        "category": "Perfect Squares"
+      }
+    ],
+    "assignments": []
+  },
+  {
+    "id": "2",
+    "title": "World War I Overview",
+    "subject": "History",
+    "taskType": "lesson",
+    "description": "Understand the causes, key events, and consequences of World War I.",
+    "deadline": "2026-05-15",
+    "priority": "medium",
+    "progress": 30,
+    "createdAt": "2026-04-27",
+    "resources": {
+      "text": "WWI overview reading",
+      "urls": ["https://example.com/wwi"],
+      "files": []
+    },
+    "learningContent": {
+      "overview": "WWI began from interconnected political tensions and transformed global power.",
+      "keyPoints": ["MAIN causes", "Alliance chain reaction", "Treaty aftermath"],
+      "example": "The Sarajevo assassination escalated via alliance obligations.",
+      "steps": ["Identify causes", "Trace escalation", "Analyze outcomes"]
+    },
+    "learningMaps": [
+      {
+        "presetId": "timeline",
+        "subject": "History",
+        "type": "timeline",
+        "data": {
+          "events": [
+            { "date": "1914", "title": "Assassination", "description": "Franz Ferdinand assassinated." },
+            { "date": "1917", "title": "US Joins", "description": "United States enters war." },
+            { "date": "1918", "title": "Armistice", "description": "Fighting ends in Europe." }
+          ]
+        }
+      }
+    ],
+    "practice": [
+      {
+        "id": "hist-p1",
+        "text": "What triggered WWI?",
+        "hint": "Think June 1914",
+        "expectedAnswer": "Assassination of Archduke Franz Ferdinand",
+        "explanation": "The Sarajevo assassination triggered the July crisis.",
+        "category": "Cause"
+      }
+    ],
+    "master": [
+      {
+        "id": "hist-m1",
+        "text": "How did Versailles affect Germany?",
+        "expectedAnswer": "It fueled resentment via harsh reparations.",
+        "explanation": "Territorial and economic penalties destabilized politics.",
+        "category": "Aftermath"
+      }
+    ],
+    "assignments": []
+  },
+  {
+    "id": "3",
+    "title": "Photosynthesis Process",
+    "subject": "Biology",
+    "taskType": "concept",
+    "description": "Explore the light-dependent and light-independent reactions of photosynthesis.",
+    "deadline": "2026-05-08",
+    "priority": "high",
+    "progress": 60,
+    "createdAt": "2026-04-26",
+    "resources": {
+      "text": "Photosynthesis chapter notes",
+      "urls": ["https://example.com/photosynthesis"],
+      "files": []
+    },
+    "learningContent": {
+      "overview": "Photosynthesis captures light energy and stores it in glucose.",
+      "keyPoints": ["Inputs are light, water, CO2", "Calvin cycle builds sugars"],
+      "example": "6CO2 + 6H2O + light -> C6H12O6 + 6O2",
+      "steps": ["Capture light", "Split water", "Fix carbon"]
+    },
+    "learningMaps": [
+      {
+        "presetId": "structure",
+        "subject": "Biology",
+        "type": "diagram",
+        "data": {
+          "parts": [
+            { "label": "Chloroplast", "description": "Photosynthesis site", "position": { "x": 40, "y": 30 } },
+            { "label": "Thylakoid", "description": "Light reactions", "position": { "x": 70, "y": 60 } }
+          ]
+        }
+      }
+    ],
+    "practice": [
+      {
+        "id": "bio-p1",
+        "text": "Main purpose of photosynthesis?",
+        "hint": "Think energy storage",
+        "expectedAnswer": "Produce glucose and oxygen",
+        "explanation": "Photosynthesis stores light energy in glucose.",
+        "category": "Process"
+      }
+    ],
+    "master": [],
+    "assignments": []
+  },
+  {
+    "id": "4",
+    "title": "Quadratic Equations Worksheet",
+    "subject": "Math",
+    "taskType": "assignment",
+    "description": "Solve quadratic equations using factoring and the quadratic formula.",
+    "deadline": "2026-05-05",
+    "priority": "high",
+    "progress": 0,
+    "createdAt": "2026-04-29",
+    "resources": {
+      "text": "Worksheet and class notes",
+      "urls": [],
+      "files": ["quadratic-worksheet.pdf"]
+    },
+    "learningMaps": [],
+    "practice": [],
+    "master": [],
+    "assignments": [
+      {
+        "id": "a1",
+        "title": "Quadratic Formula Problems",
+        "subject": "Math",
+        "deadline": "2026-05-06",
+        "enableBreakdown": true,
+        "questions": [
+          {
+            "id": "q1",
+            "text": "Solve using the quadratic formula: 2x^2 - 7x + 3 = 0",
+            "hint": "Identify a, b, c",
+            "expectedAnswer": "x = 3 and x = 0.5",
+            "category": "Solving"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -93,6 +93,7 @@ export interface LearningContent {
   keyPoints: string[];
   example: string;
   steps: string[];
+  proTip?: string; // AI-generated pro tip
 }
 
 export interface Assignment {
@@ -110,7 +111,7 @@ export interface Question {
   id: string;
   text: string;
   hint?: string;
-  expectedAnswer?: string;
+  correctAnswer?: string;
   category?: string;
   explanation?: string;
   userAnswer?: string;

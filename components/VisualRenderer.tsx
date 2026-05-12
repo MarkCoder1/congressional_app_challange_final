@@ -1,18 +1,18 @@
 "use client";
 
 import { VisualData } from "@/types/visuals";
-import { ProcessFlow } from "./ProcessFlow";
-import { Timeline } from "./Timeline";
-import { Graph } from "./Graph";
-import { ConceptMap } from "./ConceptMap";
-import { Cycle } from "./Cycle";
-import { Comparison } from "./Comparison";
-import { Hierarchy } from "./Hierarchy";
-import { Treemap } from "./Treemap";
-import { RadarChart } from "./RadarChart";
-import { GanttChart } from "./GanttChart";
-import { Heatmap } from "./Heatmap";
-import { ChordDiagram } from "./ChordDiagram";
+import { ProcessFlow } from "@/components/visuals/ProcessFlow";
+import { Timeline } from "@/components/visuals/Timeline";
+import { Graph } from "@/components/visuals/Graph";
+import { ConceptMap } from "@/components/visuals/ConceptMap";
+import { Cycle } from "@/components/visuals/Cycle";
+import { Comparison } from "@/components/visuals/Comparison";
+import { Hierarchy } from "@/components/visuals/Hierarchy";
+import { Treemap } from "@/components/visuals/Treemap";
+import { RadarChart } from "@/components/visuals/RadarChart";
+import { GanttChart } from "@/components/visuals/GanttChart";
+import { Heatmap } from "@/components/visuals/Heatmap";
+import { ChordDiagram } from "@/components/visuals/ChordDiagram";
 
 export function VisualRenderer({ data, className = "" }: { data: VisualData; className?: string }) {
   switch (data.type) {
@@ -91,7 +91,7 @@ export function VisualRenderer({ data, className = "" }: { data: VisualData; cla
     default:
       return (
         <div className="text-center text-muted-foreground p-8 border border-border rounded-lg">
-          No visual available for this content type
+          No visual available for this content typesss
         </div>
       );
   }

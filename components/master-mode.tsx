@@ -2,13 +2,20 @@
 
 import { useState } from "react";
 import { ChevronRight, CheckCircle, XCircle, SkipForward, RotateCcw, Clock } from "lucide-react";
-import { MasterQuestion } from "@/lib/types";
+import { MasterQuestion } from "@/types/task";
+import { AIFeedback } from "./AIFeedback";
+
+interface MasterResult {
+  score: number;
+  passed: boolean;
+  weakAreas: string[];
+}
 
 interface MasterModeProps {
   questions: MasterQuestion[];
   subject: string;
-  timeLimit?: number; // in minutes
-  onComplete?: (score: number) => void;
+  timeLimit?: number;
+  onComplete?: (result: MasterResult) => void;
 }
 
 export function MasterMode({ questions, subject, timeLimit, onComplete }: MasterModeProps) {
@@ -19,18 +26,22 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
   const [timeRemaining, setTimeRemaining] = useState(timeLimit ? timeLimit * 60 : null);
 
   const currentQuestion = questions[currentQuestionIndex];
-  const userAnswer = userAnswers[currentQuestion.id] || "";
-  const isCorrect = userAnswer.toLowerCase().trim() === currentQuestion.expectedAnswer?.toLowerCase().trim();
+  const userAnswer = userAnswers[currentQuestion?.id] || "";
+
+  if (!currentQuestion) {
+    return <div className="text-center p-8">No questions available</div>;
+  }
+
+  const isCorrect = userAnswer === currentQuestion.correctAnswer;
 
   const totalCorrect = Object.keys(userAnswers).filter((id) => {
     const question = questions.find((q) => q.id === id);
-    return question && userAnswers[id].toLowerCase().trim() === question.expectedAnswer?.toLowerCase().trim();
+    return question && userAnswers[id] === question.correctAnswer;
   }).length;
 
   const score = Math.round((totalCorrect / questions.length) * 100);
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-  // Performance label
   const getPerformanceLabel = (scoreVal: number) => {
     if (scoreVal >= 80) return { label: "Excellent", color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
     if (scoreVal >= 60) return { label: "Good", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
@@ -39,18 +50,18 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
 
   const performanceInfo = getPerformanceLabel(score);
 
-  const handleAnswer = (text: string) => {
+  const handleAnswer = (optionId: string) => {
     if (!submitted) {
       setUserAnswers((prev) => ({
         ...prev,
-        [currentQuestion.id]: text,
+        [currentQuestion.id]: optionId,
       }));
     }
   };
 
   const handleSubmit = () => {
-    if (!userAnswer.trim()) {
-      alert("Please enter an answer");
+    if (!userAnswer) {
+      alert("Please select an answer");
       return;
     }
     setSubmitted(true);
@@ -59,7 +70,14 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
   const handleNext = () => {
     if (isLastQuestion) {
       setCompleted(true);
-      onComplete?.(score);
+      const weakAreas = questions
+        .filter(q => {
+          const ans = userAnswers[q.id] || "";
+          return ans !== q.correctAnswer;
+        })
+        .map(q => q.text);
+      const passed = score >= 80;
+      onComplete?.({ score, passed, weakAreas });
     } else {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSubmitted(false);
@@ -81,121 +99,97 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
   };
 
   if (completed) {
+    // Prepare answers data for AI
+    const answersData = questions.map(q => ({
+      questionId: q.id,
+      questionText: q.text,
+      userAnswer: userAnswers[q.id] || "",
+      correctAnswer: q.options.find(opt => opt.id === q.correctAnswer)?.text || "",
+      isCorrect: (userAnswers[q.id] || "") === q.correctAnswer,
+      category: q.category,
+    }));
+
     return (
-      <div className="w-full max-w-4xl mx-auto">
-        {/* Results Screen */}
-        <div className="text-center space-y-8 py-12">
-          {/* Score Circle */}
-          <div className="flex justify-center">
-            <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center ${
-              score >= 80 
-                ? "bg-gradient-to-br from-green-100 to-green-50 border-green-500"
-                : score >= 60
-                  ? "bg-gradient-to-br from-blue-100 to-blue-50 border-blue-500"
-                  : "bg-gradient-to-br from-orange-100 to-orange-50 border-orange-500"
-            }`}>
-              <div className="text-center">
-                <div className={`text-6xl font-bold ${performanceInfo.color}`}>{score}%</div>
-                <div className="text-sm text-muted-foreground mt-2">Test Score</div>
-              </div>
-            </div>
+      <div className="w-full max-w-4xl mx-auto space-y-6">
+        {/* Results Header */}
+        <div className="text-center py-6 bg-card rounded-2xl border border-border">
+          <div className="inline-flex items-center justify-center mb-2">
+            <div className={`text-5xl font-bold ${performanceInfo.color}`}>{score}%</div>
           </div>
-
-          {/* Performance Label */}
-          <div>
-            <h2 className={`text-3xl font-bold mb-2 ${performanceInfo.color}`}>
-              {performanceInfo.label}
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              You answered{" "}
-              <span className="font-semibold text-foreground">
-                {totalCorrect} out of {questions.length}
-              </span>{" "}
-              questions correctly
-            </p>
-          </div>
-
-          {/* Performance Message */}
-          <div className={`rounded-lg p-6 border-2 ${performanceInfo.bg} ${performanceInfo.border}`}>
-            <p className={`font-medium ${performanceInfo.color}`}>
-              {score >= 80
-                ? "🏆 Outstanding performance! You've mastered this material."
-                : score >= 60
-                  ? "✓ Good performance! Review challenging areas and try again to improve."
-                  : "💪 You need to study more. Review the material and take the test again."}
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-4 justify-center flex-wrap">
-            <button
-              onClick={handleRetry}
-              className="btn-primary flex items-center gap-2"
-            >
-              <RotateCcw size={18} />
+          <p className="text-sm text-muted-foreground">
+            {totalCorrect} / {questions.length} correct
+          </p>
+          <div className="mt-3 flex gap-3 justify-center">
+            <button onClick={handleRetry} className="text-sm text-accent hover:underline">
               Retry Test
             </button>
-            <button className="btn-secondary flex items-center gap-2">
-              <SkipForward size={18} />
+            <button className="text-sm text-muted-foreground hover:underline">
               Back to Learning
             </button>
           </div>
+        </div>
 
-          {/* Detailed Results */}
-          <div className="mt-12 space-y-4">
-            <h3 className="text-xl font-bold text-foreground">Results Summary</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <p className="text-muted-foreground text-sm">Correct</p>
-                <p className="text-3xl font-bold text-green-600">{totalCorrect}</p>
-              </div>
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <p className="text-muted-foreground text-sm">Incorrect</p>
-                <p className="text-3xl font-bold text-red-600">{questions.length - totalCorrect}</p>
-              </div>
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <p className="text-muted-foreground text-sm">Total Questions</p>
-                <p className="text-3xl font-bold text-foreground">{questions.length}</p>
-              </div>
-            </div>
+        {/* AI Feedback */}
+        <AIFeedback
+          mode="master"
+          subject={subject}
+          score={score}
+          answers={answersData}
+          weakAreas={questions
+            .filter(q => (userAnswers[q.id] || "") !== q.correctAnswer)
+            .map(q => q.text)}
+        />
+
+        {/* Performance Message (only for master mode) */}
+        {score >= 80 ? (
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200 text-center">
+            <p className="text-sm text-green-800">🏆 Outstanding! You've mastered this topic.</p>
           </div>
+        ) : score >= 60 ? (
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-center">
+            <p className="text-sm text-blue-800">✓ Good performance! Review the questions you missed.</p>
+          </div>
+        ) : (
+          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200 text-center">
+            <p className="text-sm text-orange-800">💪 Keep studying! Review the material and try again.</p>
+          </div>
+        )}
 
-          {/* Question Breakdown */}
-          <div className="mt-12 space-y-4 text-left">
-            <h3 className="text-xl font-bold text-foreground">Question Breakdown</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {questions.map((q, idx) => {
-                const userAns = userAnswers[q.id] || "";
-                const isQCorrect = userAns.toLowerCase().trim() === q.expectedAnswer?.toLowerCase().trim();
-                return (
-                  <div
-                    key={q.id}
-                    className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border hover:border-accent/50 transition-colors"
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      {isQCorrect ? (
-                        <CheckCircle size={20} className="text-green-600" />
-                      ) : (
-                        <XCircle size={20} className="text-red-600" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground">
-                        Q{idx + 1}: {q.text}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Your answer: <span className={isQCorrect ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{userAns || "(no answer)"}</span>
-                      </p>
-                      {!isQCorrect && (
-                        <p className="text-sm text-muted-foreground">
-                          Correct answer: <span className="text-green-600 font-medium">{q.expectedAnswer}</span>
-                        </p>
-                      )}
-                    </div>
+        {/* Question Breakdown */}
+        <div>
+          <h3 className="text-lg font-bold text-foreground mb-3">Question Breakdown</h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {questions.map((q, idx) => {
+              const userAns = userAnswers[q.id] || "";
+              const isQCorrect = userAns === q.correctAnswer;
+              const selectedOption = q.options.find(opt => opt.id === userAns);
+              const correctOption = q.options.find(opt => opt.id === q.correctAnswer);
+
+              return (
+                <div key={q.id} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {isQCorrect ? (
+                      <CheckCircle size={16} className="text-green-600" />
+                    ) : (
+                      <XCircle size={16} className="text-red-600" />
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground">Q{idx + 1}: {q.text}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your answer: <span className={isQCorrect ? "text-green-600" : "text-red-600"}>
+                        {selectedOption?.text || "(no answer)"}
+                      </span>
+                    </p>
+                    {!isQCorrect && (
+                      <p className="text-xs text-green-600 mt-0.5">
+                        Correct: {correctOption?.text}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -232,7 +226,6 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-accent to-accent/70 transition-all duration-300"
@@ -241,55 +234,55 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
         </div>
       </div>
 
-      {/* Question Card */}
       <div className="card-base bg-card rounded-2xl border border-border p-8 shadow-md mb-8">
-        {/* Question Text */}
         <div className="mb-8">
           <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Question {currentQuestionIndex + 1}</p>
           <h3 className="text-2xl font-bold text-foreground leading-relaxed">{currentQuestion.text}</h3>
         </div>
 
-        {/* Note: No Hint in Master Mode */}
-        {!submitted && (
+        {!submitted && currentQuestion.hint && (
           <p className="text-xs text-muted-foreground mb-6 italic">
             💡 Hint: {currentQuestion.hint}
           </p>
         )}
 
-        {/* Answer Input */}
         {!submitted ? (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">Your Answer:</label>
-              <textarea
-                value={userAnswer}
-                onChange={(e) => handleAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-200 resize-none"
-                rows={3}
-                disabled={submitted}
-              />
+            <div className="space-y-3">
+              {currentQuestion.options.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    userAnswer === option.id
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="answer"
+                    value={option.id}
+                    checked={userAnswer === option.id}
+                    onChange={() => handleAnswer(option.id)}
+                    className="w-4 h-4 text-accent focus:ring-accent"
+                  />
+                  <span className="ml-3 text-foreground">{option.text}</span>
+                </label>
+              ))}
             </div>
-
-            {/* Submit Button */}
-            <button
-              onClick={handleSubmit}
-              className="btn-primary w-full flex items-center justify-center gap-2"
-            >
+            
+            <button onClick={handleSubmit} className="btn-primary w-full flex items-center justify-center gap-2 mt-6">
               Submit Answer
               <ChevronRight size={18} />
             </button>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Feedback */}
-            <div
-              className={`p-6 rounded-lg border-2 ${
-                isCorrect
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
-              }`}
-            >
+            <div className={`p-6 rounded-lg border-2 ${
+              isCorrect
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
+            }`}>
               <div className="flex items-start gap-3">
                 {isCorrect ? (
                   <CheckCircle size={24} className="text-green-600 flex-shrink-0 mt-1" />
@@ -302,7 +295,9 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
                   </p>
                   {!isCorrect && (
                     <p className="text-sm mb-3">
-                      Correct answer: <span className="font-mono font-semibold">{currentQuestion.expectedAnswer}</span>
+                      Correct answer: <span className="font-mono font-semibold">
+                        {currentQuestion.options.find(opt => opt.id === currentQuestion.correctAnswer)?.text}
+                      </span>
                     </p>
                   )}
                   <p className="text-sm leading-relaxed">{currentQuestion.explanation}</p>
@@ -310,11 +305,7 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
               </div>
             </div>
 
-            {/* Next Button */}
-            <button
-              onClick={handleNext}
-              className="btn-primary w-full flex items-center justify-center gap-2"
-            >
+            <button onClick={handleNext} className="btn-primary w-full flex items-center justify-center gap-2">
               {isLastQuestion ? "See Results" : "Next Question"}
               <ChevronRight size={18} />
             </button>
@@ -322,7 +313,6 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
         )}
       </div>
 
-      {/* Stats Bar */}
       <div className="card-base bg-secondary/30 rounded-lg p-4 border border-border">
         <div className="flex items-center justify-between text-sm">
           <div>
