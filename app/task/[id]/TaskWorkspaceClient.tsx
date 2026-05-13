@@ -165,11 +165,10 @@ export default function TaskWorkspaceClient({
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                      isActive
-                        ? "active bg-accent text-white shadow-md"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    }`}
+                    className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${isActive
+                      ? "active bg-accent text-white shadow-md"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
                   >
                     <IconComponent size={18} />
                     {tab}
@@ -274,11 +273,10 @@ export default function TaskWorkspaceClient({
                 <button
                   key={tab}
                   onClick={() => handleTabChange(tab)}
-                  className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                    isActive
-                      ? "active bg-accent text-white shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  }`}
+                  className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${isActive
+                    ? "active bg-accent text-white shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
                 >
                   <IconComponent size={18} />
                   {tab}
@@ -290,7 +288,6 @@ export default function TaskWorkspaceClient({
 
         <div className="flex-1 overflow-auto">
           {activeTab === "Learn" && (
-            // ... (keep your existing Learn JSX exactly as it was, no changes)
             <div className="p-6 space-y-6 fade-in-panel">
               {/* Hero Banner */}
               <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20">
@@ -308,12 +305,109 @@ export default function TaskWorkspaceClient({
                   </div>
                 </div>
               </div>
-              {/* Key Points Grid – keep all existing content */}
-              {/* Example Card – keep */}
-              {/* Steps Timeline – keep */}
-              {/* Pro Tip – keep */}
-              {/* Visual Learning System – keep */}
-              {/* Progress Indicator – keep */}
+
+              {/* Key Points Grid */}
+              {learningContent.keyPoints && learningContent.keyPoints.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Target size={20} /> Key Points
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {learningContent.keyPoints.map((point, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
+                        <CheckCircle2 size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-foreground/80">{point}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Example Card */}
+              {learningContent.example && (
+                <div className="space-y-3">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Lightbulb size={20} /> Example
+                  </h2>
+                  <div className="p-5 rounded-xl bg-accent/5 border border-accent/20">
+                    <p className="text-sm text-foreground/80 leading-relaxed">{learningContent.example}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Steps Timeline */}
+              {learningContent.steps && learningContent.steps.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <ListChecks size={20} /> Step by Step
+                  </h2>
+                  <div className="space-y-3">
+                    {learningContent.steps.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
+                          {idx + 1}
+                        </div>
+                        <p className="text-sm text-foreground/80">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pro Tip */}
+              {(learningContent as any).proTip && (
+                <div className="space-y-3">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles size={20} /> Pro Tip
+                  </h2>
+                  <div className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {(learningContent as any).proTip}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Visual Learning System */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  <Eye size={20} /> Visual Concept Map
+                </h2>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  {task.visualData ? (
+                    <NewVisualRenderer data={task.visualData} />
+                  ) : hasLearningMaps ? (
+                    <div className="space-y-4">
+                      {/* Map selector buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        {mapOptions.map((mapOption) => (
+                          <button
+                            key={mapOption.id}
+                            onClick={() => setSelectedPresetId(mapOption.id)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${selectedPresetId === mapOption.id
+                              ? "bg-accent text-white shadow-md"
+                              : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                              }`}
+                          >
+                            {mapOption.icon} {mapOption.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Old visual renderer */}
+                      {selectedMap && selectedVisualType ? (
+                        <OldVisualRenderer data={selectedMap.data} />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Select a map to view the visualization.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No visualization available for this topic.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress Indicator (optional) */}
+              <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border">
+                Keep exploring – you’re making progress!
+              </div>
             </div>
           )}
           {activeTab === "Practice" && (

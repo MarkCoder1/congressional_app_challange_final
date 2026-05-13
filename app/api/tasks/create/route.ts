@@ -99,8 +99,17 @@ function convertToGantt(data: any): VisualData {
     name: t.name || t.title || `Task ${idx + 1}`,
     start: t.start || "Day 1",
     end: t.end || "Day 1",
-    progress: typeof t.progress === "number" ? t.progress : (t.progress === "100%" ? 100 : 0),
-    dependencies: t.dependsOn ? (Array.isArray(t.dependsOn) ? t.dependsOn : [t.dependsOn]) : [],
+    progress:
+      typeof t.progress === "number"
+        ? t.progress
+        : t.progress === "100%"
+          ? 100
+          : 0,
+    dependencies: t.dependsOn
+      ? Array.isArray(t.dependsOn)
+        ? t.dependsOn
+        : [t.dependsOn]
+      : [],
   }));
   return { type: "gantt", title: "Gantt Chart", tasks: normalized };
 }
@@ -115,7 +124,9 @@ function isHeatmapData(data: any): boolean {
 }
 
 function convertToHeatmap(data: any): VisualData {
-  let xLabels: string[] = [], yLabels: string[] = [], matrix: number[][] = [];
+  let xLabels: string[] = [],
+    yLabels: string[] = [],
+    matrix: number[][] = [];
   if (data.regions && data.species) {
     xLabels = data.regions;
     yLabels = data.species;
@@ -155,7 +166,11 @@ function convertToChord(data: any): VisualData {
     for (const flow of data.tradeFlows) {
       const fromIdx = index[flow.from];
       const toIdx = index[flow.to];
-      if (fromIdx !== undefined && toIdx !== undefined && typeof flow.value === "number") {
+      if (
+        fromIdx !== undefined &&
+        toIdx !== undefined &&
+        typeof flow.value === "number"
+      ) {
         matrix[fromIdx][toIdx] = flow.value;
       }
     }
@@ -191,29 +206,84 @@ function transformToVisualData(visual: any): VisualData | undefined {
   const type = (visual.type || "").toLowerCase();
 
   if (isHeatmapData(data)) return convertToHeatmap(data);
-  if (type === "gantt" || presetId.toLowerCase().includes("gantt") || isGanttData(data)) return convertToGantt(data);
-  if (type === "radar" || presetId.toLowerCase().includes("radar") || isRadarData(data)) return convertToRadar(data);
+  if (
+    type === "gantt" ||
+    presetId.toLowerCase().includes("gantt") ||
+    isGanttData(data)
+  )
+    return convertToGantt(data);
+  if (
+    type === "radar" ||
+    presetId.toLowerCase().includes("radar") ||
+    isRadarData(data)
+  )
+    return convertToRadar(data);
   if (type === "treemap" || presetId.toLowerCase().includes("treemap")) {
     const treemapData = convertToTreemapData(data);
-    if (treemapData.length > 0) return { type: "treemap", title: presetId || "Treemap", data: treemapData };
+    if (treemapData.length > 0)
+      return {
+        type: "treemap",
+        title: presetId || "Treemap",
+        data: treemapData,
+      };
   }
-  if (type.includes("chord") || presetId.toLowerCase().includes("chord") || isChordData(data)) return convertToChord(data);
+  if (
+    type.includes("chord") ||
+    presetId.toLowerCase().includes("chord") ||
+    isChordData(data)
+  )
+    return convertToChord(data);
 
   switch (visual.type) {
     case "process":
-      return { type: "process", title: presetId || "Process", steps: data.steps || [], inputs: data.inputs, outputs: data.outputs };
+      return {
+        type: "process",
+        title: presetId || "Process",
+        steps: data.steps || [],
+        inputs: data.inputs,
+        outputs: data.outputs,
+      };
     case "timeline":
-      return { type: "timeline", title: presetId || "Timeline", events: data.events || [] };
+      return {
+        type: "timeline",
+        title: presetId || "Timeline",
+        events: data.events || [],
+      };
     case "graph":
-      return { type: "graph", title: presetId || "Graph", xLabel: data.xLabel || "x", yLabel: data.yLabel || "y", points: data.points || [], graphType: data.graphType || "line" };
+      return {
+        type: "graph",
+        title: presetId || "Graph",
+        xLabel: data.xLabel || "x",
+        yLabel: data.yLabel || "y",
+        points: data.points || [],
+        graphType: data.graphType || "line",
+      };
     case "concept_map":
-      return { type: "concept_map", title: presetId || "Concept Map", nodes: data.nodes || [], edges: data.edges || [] };
+      return {
+        type: "concept_map",
+        title: presetId || "Concept Map",
+        nodes: data.nodes || [],
+        edges: data.edges || [],
+      };
     case "cycle":
-      return { type: "cycle", title: presetId || "Cycle", stages: data.stages || [] };
+      return {
+        type: "cycle",
+        title: presetId || "Cycle",
+        stages: data.stages || [],
+      };
     case "comparison":
-      return { type: "comparison", title: presetId || "Comparison", categories: data.categories || [], items: data.items || [] };
+      return {
+        type: "comparison",
+        title: presetId || "Comparison",
+        categories: data.categories || [],
+        items: data.items || [],
+      };
     case "hierarchy":
-      return { type: "hierarchy", title: presetId || "Hierarchy", root: data.root || {} };
+      return {
+        type: "hierarchy",
+        title: presetId || "Hierarchy",
+        root: data.root || {},
+      };
     default:
       return undefined;
   }
@@ -226,7 +296,7 @@ export async function POST(request: NextRequest) {
     if (!body.title || !body.subject || !body.description) {
       return NextResponse.json(
         { error: "Missing required fields: title, subject, description" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -241,7 +311,10 @@ export async function POST(request: NextRequest) {
     if (generated.learningMaps && generated.learningMaps.length > 0) {
       const raw = generated.learningMaps[0];
       visualData = transformToVisualData(raw);
-      console.log("Transformed visualData:", JSON.stringify(visualData, null, 2));
+      console.log(
+        "Transformed visualData:",
+        JSON.stringify(visualData, null, 2),
+      );
     }
 
     if (!visualData) {
@@ -249,9 +322,21 @@ export async function POST(request: NextRequest) {
         type: "process",
         title: body.title,
         steps: [
-          { id: "1", title: "Review", description: "Review the learning content." },
-          { id: "2", title: "Practice", description: "Test your understanding with practice questions." },
-          { id: "3", title: "Master", description: "Challenge yourself with master questions." },
+          {
+            id: "1",
+            title: "Review",
+            description: "Review the learning content.",
+          },
+          {
+            id: "2",
+            title: "Practice",
+            description: "Test your understanding with practice questions.",
+          },
+          {
+            id: "3",
+            title: "Master",
+            description: "Challenge yourself with master questions.",
+          },
         ],
         inputs: ["Curiosity"],
         outputs: ["Knowledge"],
@@ -281,6 +366,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: task.id }, { status: 201 });
   } catch (error) {
     console.error("Failed to create task:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
