@@ -31,31 +31,58 @@ export default function CreateTaskPage() {
 
   const handleSubmit = async () => {
     if (!title || !subject) {
+      console.warn("[CreateTaskPage] validation failed before submit", {
+        hasTitle: !!title,
+        hasSubject: !!subject,
+        type,
+      });
       alert("Title and subject required");
       return;
     }
 
     setLoading(true);
     try {
+      const payload = {
+        title,
+        subject,
+        description,
+        type,
+        resources: { text: "", urls: [] },
+        learningMaps: [],
+        practice: [],
+        master: [],
+        assignments: [],
+      };
+
+      console.log("[CreateTaskPage] submitting create-task request", {
+        title,
+        subject,
+        type,
+        descriptionLength: description.length,
+      });
+
       const res = await fetch("/api/tasks/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title,
-          subject,
-          description,
-          type,
-          resources: { text: "", urls: [] },
-          learningMaps: [],
-          practice: [],
-          master: [],
-          assignments: [],
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+      console.log("[CreateTaskPage] create-task response received", {
+        ok: res.ok,
+        status: res.status,
+        taskId: data?.id,
+        keys: data ? Object.keys(data) : [],
+      });
+
+      if (!res.ok) {
+        console.error("[CreateTaskPage] create-task request failed", data);
+        throw new Error(data?.error || "Failed to create task");
+      }
+
+      console.log("[CreateTaskPage] navigating to task", data.id);
       router.push(`/task/${data.id}`);
     } catch (error) {
       console.error("Failed to create task:", error);

@@ -5,11 +5,14 @@ import fs from "fs";
 
 const dbPath = path.join(process.cwd(), "data", "app.db");
 const dataDir = path.join(process.cwd(), "data");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
 
 export const db = new Database(dbPath);
 
-// Tasks table
+// ========== TASKS TABLE ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
@@ -23,29 +26,18 @@ db.prepare(`
     master TEXT,
     assignments TEXT,
     progress INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'learning',
+    status TEXT DEFAULT 'not_started',
+    started_at TEXT,
+    completed_at TEXT,
+    last_activity_at TEXT,
+    progress_meta TEXT DEFAULT '{}',
     visualData TEXT DEFAULT '{}',
-    assignmentContent TEXT DEFAULT '{}'
+    assignmentContent TEXT DEFAULT '{}',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `).run();
 
-// Migration for tasks table
-const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
-const columnNames = tableInfo.map(col => col.name);
-if (!columnNames.includes("progress")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0").run();
-}
-if (!columnNames.includes("status")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN status TEXT DEFAULT 'learning'").run();
-}
-if (!columnNames.includes("visualData")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN visualData TEXT DEFAULT '{}'").run();
-}
-if (!columnNames.includes("assignmentContent")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN assignmentContent TEXT DEFAULT '{}'").run();
-}
-
-// ---------- Assignment progress table ----------
+// ========== ASSIGNMENT PROGRESS TABLE ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS assignment_progress (
     id TEXT PRIMARY KEY,
@@ -55,15 +47,49 @@ db.prepare(`
   )
 `).run();
 
-// Migration for assignment_progress table (if columns missing)
-const progressTableInfo = db.prepare("PRAGMA table_info(assignment_progress)").all() as Array<{ name: string }>;
-const progressColumnNames = progressTableInfo.map(col => col.name);
-if (!progressColumnNames.includes("task_id")) {
-  db.prepare("ALTER TABLE assignment_progress ADD COLUMN task_id TEXT NOT NULL").run();
+// ========== NEW: ASSIGNMENT SUBMISSIONS TABLE ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS assignment_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT UNIQUE NOT NULL,
+    submission_data TEXT NOT NULL,
+    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).run();
+
+// ========== MIGRATIONS (for existing DBs) ==========
+const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
+const columns = tableInfo.map(c => c.name);
+
+if (!columns.includes("updated_at")) {
+  db.prepare("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
 }
-if (!progressColumnNames.includes("progress_data")) {
-  db.prepare("ALTER TABLE assignment_progress ADD COLUMN progress_data TEXT NOT NULL").run();
+
+if (!columns.includes("started_at")) {
+  db.prepare("ALTER TABLE tasks ADD COLUMN started_at TEXT").run();
 }
-if (!progressColumnNames.includes("updated_at")) {
-  db.prepare("ALTER TABLE assignment_progress ADD COLUMN updated_at INTEGER DEFAULT (unixepoch())").run();
+
+if (!columns.includes("completed_at")) {
+  db.prepare("ALTER TABLE tasks ADD COLUMN completed_at TEXT").run();
 }
+
+if (!columns.includes("last_activity_at")) {
+  db.prepare("ALTER TABLE tasks ADD COLUMN last_activity_at TEXT").run();
+}
+
+if (!columns.includes("progress_meta")) {
+  db.prepare("ALTER TABLE tasks ADD COLUMN progress_meta TEXT DEFAULT '{}'").run();
+}
+
+// Progress table migration
+const progressInfo = db.prepare("PRAGMA table_info(assignment_progress)").all() as Array<{ name: string }>;
+const pCols = progressInfo.map(c => c.name);
+
+if (!pCols.includes("task_id")) {
+  db.prepare("ALTER TABLE assignment_progress ADD COLUMN task_id TEXT").run();
+}
+
+// Final check
+console.log("✅ Database initialized with assignment_submissions table");
+
+export default db;

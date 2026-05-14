@@ -2,7 +2,31 @@
 import { VisualData } from "./visuals";
 
 export type TaskType = "lesson" | "assignment";
-export type TaskStatus = "learning" | "practice" | "mastering" | "completed";
+export type TaskStatus = "not_started" | "in_progress" | "completed";
+export type LessonProgressEvent =
+  | "learn_entered"
+  | "learn_viewed"
+  | "practice_completed"
+  | "master_completed"
+  | "master_failed";
+export type AssignmentWorkflowStage =
+  | "overview"
+  | "planning"
+  | "research"
+  | "execution"
+  | "checkpoints"
+  | "quality"
+  | "validation"
+  | "submission";
+
+export interface TaskProgressMeta {
+  learnCompleted?: boolean;
+  practiceCompleted?: boolean;
+  masterCompleted?: boolean;
+  assignmentWorkflowProgress?: number;
+  assignmentSectionsCompleted?: AssignmentWorkflowStage[];
+  manuallyAdjusted?: boolean;
+}
 
 // ========== ASSIGNMENT CONTENT ==========
 // /types/task.ts – add to AssignmentContent
@@ -107,6 +131,10 @@ export interface Task {
   type: TaskType;
   progress: number;
   status: TaskStatus;
+  completedAt?: string;
+  startedAt?: string;
+  lastActivityAt?: string;
+  progressMeta?: TaskProgressMeta;
   deadline?: string;
 
   // Lesson‑specific fields

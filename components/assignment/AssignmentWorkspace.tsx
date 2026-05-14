@@ -11,7 +11,7 @@ import { ResearchStage } from "./stages/ResearchStage";
 import { ExecutionStage } from "./stages/ExecutionStage";
 import { CheckpointsStage } from "./stages/CheckpointsStage";
 import { QualityStage } from "./stages/QualityStage";
-import { ValidationStage } from "./stages/ValidationStage";
+import ValidationStage from "./stages/ValidationStage";
 import { AssignmentContent } from "./types";
 
 interface AssignmentWorkspaceProps {

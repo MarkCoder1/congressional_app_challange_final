@@ -10,6 +10,7 @@ import { AssignmentContent } from "@/types/task";
 
 export default async function TaskPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  console.log("[TaskPage] loading task", { taskId: id });
   const task = getTaskById(id);
 
   // Safely extract assignmentContent with correct type
@@ -21,6 +22,14 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
     assignment.plan?.steps &&
     assignment.plan.steps.length > 0
   );
+
+  console.log("[TaskPage] task lookup result", {
+    taskId: id,
+    found: !!task,
+    hasAssignment,
+    hasVisualData: !!task?.visualData,
+    visualType: task?.visualData?.type,
+  });
 
   if (!task) {
     return (

@@ -17,8 +17,23 @@ export async function generateVisualData(
 ): Promise<VisualData> {
   const { topic, subject, description, visualType } = options;
 
+  console.log("[generateVisualData] start", {
+    topic,
+    subject,
+    descriptionLength: description.length,
+    visualType: visualType || "auto-detect",
+    hasGroqKey: !!process.env.GROQ_API_KEY,
+  });
+
   if (!process.env.GROQ_API_KEY) {
     console.warn("No GROQ API key – using rich fallback visual");
+    console.log(
+      "[generateVisualData] returning fallback because API key is missing",
+      {
+        topic,
+        subject,
+      },
+    );
     return getRichFallbackVisual(topic, subject);
   }
 
@@ -175,6 +190,10 @@ Now, generate the visual data. Return ONLY the JSON object.`;
       subject,
       visualType: visualType || "auto-detect",
     });
+    console.log("[generateVisualData] prompt prepared", {
+      promptLength: prompt.length,
+      detectionMode: visualType ? "forced" : "auto-detect",
+    });
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
@@ -187,18 +206,44 @@ Now, generate the visual data. Return ONLY the JSON object.`;
 
     const content = completion.choices[0]?.message?.content;
     console.log("AI raw response content:", content);
+    console.log("[generateVisualData] response metadata", {
+      hasContent: !!content,
+      contentLength: content?.length ?? 0,
+      choiceCount: completion.choices.length,
+    });
     if (!content) throw new Error("Empty response");
 
     let parsed = JSON.parse(content);
     console.log("AI parsed response:", parsed);
+    console.log("[generateVisualData] parsed response keys", {
+      keys: Object.keys(parsed || {}),
+    });
     let visualData: VisualData | null = null;
 
     // Flexible extraction (same as before)
     if (parsed.visualData && parsed.visualData.type) {
+      console.log(
+        "[generateVisualData] extracted visualData from visualData wrapper",
+        {
+          type: parsed.visualData.type,
+        },
+      );
       visualData = parsed.visualData;
     } else if (parsed.type && parsed.type !== "detectedType") {
+      console.log(
+        "[generateVisualData] extracted visualData from top-level type",
+        {
+          type: parsed.type,
+        },
+      );
       visualData = parsed as VisualData;
     } else if (parsed.detectedType && parsed.visualData) {
+      console.log(
+        "[generateVisualData] extracted visualData from detectedType wrapper",
+        {
+          detectedType: parsed.detectedType,
+        },
+      );
       visualData = parsed.visualData;
     } else if (
       parsed.process ||
@@ -214,6 +259,9 @@ Now, generate the visual data. Return ONLY the JSON object.`;
       parsed.heatmap ||
       parsed.chord
     ) {
+      console.log(
+        "[generateVisualData] extracting visualData from keyed schema response",
+      );
       if (parsed.process)
         visualData = { type: "process", ...parsed.process } as VisualData;
       else if (parsed.timeline)
@@ -245,14 +293,29 @@ Now, generate the visual data. Return ONLY the JSON object.`;
 
     if (!visualData || !visualData.type) {
       console.warn("Could not parse visualData from AI, using fallback");
+      console.warn("[generateVisualData] visualData extraction failed", {
+        keys: Object.keys(parsed || {}),
+      });
       return getRichFallbackVisual(topic, subject);
     }
 
+    console.log("[generateVisualData] validating and enriching visual data", {
+      type: visualData.type,
+    });
     visualData = validateAndEnrichVisualData(visualData, topic, subject);
     console.log("Final visual data:", visualData);
+    console.log("[generateVisualData] final visual data ready", {
+      type: visualData.type,
+      title: visualData.title,
+    });
     return visualData;
   } catch (error) {
     console.error("Visual generation failed:", error);
+    console.error("[generateVisualData] falling back after error", {
+      topic,
+      subject,
+      visualType: visualType || "auto-detect",
+    });
     return getRichFallbackVisual(topic, subject);
   }
 }
@@ -266,8 +329,17 @@ function validateAndEnrichVisualData(
   if (data.type === "graph") {
     const graph = data as GraphData;
     let points = graph.points || [];
+    console.log("[generateVisualData] graph enrichment check", {
+      title: graph.title,
+      pointCount: points.length,
+      hasEquation: !!graph.equation,
+    });
     if (points.length < 5 && graph.equation) {
       const generated = generatePointsFromEquation(graph.equation);
+      console.log("[generateVisualData] generated points from equation", {
+        generatedCount: generated.length,
+        existingCount: points.length,
+      });
       if (generated.length > points.length) {
         graph.points = generated;
       }
@@ -281,6 +353,9 @@ function validateAndEnrichVisualData(
 
 function generatePointsFromEquation(eq: string): { x: number; y: number }[] {
   try {
+    console.log("[generateVisualData] generating points from equation", {
+      equation: eq,
+    });
     let sanitized = eq
       .replace(/\s/g, "")
       .replace(/x²/g, "x^2")
@@ -291,8 +366,18 @@ function generatePointsFromEquation(eq: string): { x: number; y: number }[] {
       const y = fn(x);
       if (isFinite(y)) points.push({ x, y });
     }
+    console.log("[generateVisualData] equation-to-points result", {
+      pointCount: points.length,
+    });
     return points;
   } catch (e) {
+    console.warn(
+      "[generateVisualData] equation parsing failed, using fallback points",
+      {
+        equation: eq,
+        error: e,
+      },
+    );
     return [
       { x: -2, y: 4 },
       { x: -1, y: 1 },
@@ -308,10 +393,80 @@ function generatePointsFromEquation(eq: string): { x: number; y: number }[] {
 
 function getRichFallbackVisual(topic: string, subject: string): VisualData {
   // (keep your existing fallback logic unchanged)
+  console.log("[generateVisualData] building rich fallback visual", {
+    topic,
+    subject,
+  });
+  // If topic explicitly refers to photosynthesis, prefer a photosynthesis concept map
+  if (topic.toLowerCase().includes("photosynth")) {
+    console.log(
+      "[generateVisualData] fallback branch selected: concept_map photosynthesis",
+    );
+    return {
+      type: "concept_map",
+      title: `Photosynthesis: ${topic}`,
+      nodes: [
+        {
+          id: "sunlight",
+          label: "Sunlight",
+          description:
+            "Provides the energy needed for photosynthesis in plants; absorbed by chlorophyll.",
+          icon: "☀️",
+        },
+        {
+          id: "chlorophyll",
+          label: "Chlorophyll",
+          description:
+            "Pigment in chloroplasts that captures light energy and initiates the photosynthetic process.",
+          icon: "🌿",
+        },
+        {
+          id: "water",
+          label: "Water (H2O)",
+          description:
+            "Absorbed by roots and split during the light reactions to release oxygen and electrons.",
+          icon: "💧",
+        },
+        {
+          id: "carbon",
+          label: "Carbon Dioxide (CO2)",
+          description:
+            "Taken in from the atmosphere and fixed into organic molecules during the Calvin cycle.",
+          icon: "🫧",
+        },
+        {
+          id: "glucose",
+          label: "Glucose (C6H12O6)",
+          description:
+            "Primary sugar product of photosynthesis used by plants for growth and metabolism.",
+          icon: "🍬",
+        },
+        {
+          id: "oxygen",
+          label: "Oxygen (O2)",
+          description:
+            "Byproduct of the light reactions released into the atmosphere, essential for aerobic life.",
+          icon: "🌬️",
+        },
+      ],
+      edges: [
+        { from: "sunlight", to: "chlorophyll", label: "absorbed by" },
+        { from: "water", to: "chlorophyll", label: "split in light reactions" },
+        { from: "carbon", to: "glucose", label: "fixed into" },
+        { from: "chlorophyll", to: "glucose", label: "drives production of" },
+        { from: "water", to: "oxygen", label: "produces" },
+      ],
+      centerNode: "chlorophyll",
+    };
+  }
+
   if (
     subject.toLowerCase().includes("bio") ||
     subject.toLowerCase().includes("respiratory")
   ) {
+    console.log(
+      "[generateVisualData] fallback branch selected: concept_map respiratory",
+    );
     return {
       type: "concept_map",
       title: `${topic} System`,
@@ -375,6 +530,7 @@ function getRichFallbackVisual(topic: string, subject: string): VisualData {
     subject.toLowerCase().includes("math") ||
     topic.toLowerCase().includes("quadratic")
   ) {
+    console.log("[generateVisualData] fallback branch selected: graph math");
     return {
       type: "graph",
       title: `${topic} Visualization`,

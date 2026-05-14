@@ -1,7 +1,7 @@
 // /app/task/[id]/TaskWorkspaceClient.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Play,
   BookOpen,
@@ -63,16 +63,69 @@ export default function TaskWorkspaceClient({
   const [activeTab, setActiveTab] = useState<TabType>("Learn");
   const [selectedPresetId, setSelectedPresetId] = useState("");
 
+  useEffect(() => {
+    console.log("[TaskWorkspaceClient] mounted", {
+      taskId: initialTask.id,
+      title: initialTask.title,
+      subject: initialTask.subject,
+      hasAssignment,
+      hasVisualData: !!initialTask.visualData,
+      visualType: initialTask.visualData?.type,
+    });
+  }, [hasAssignment, initialTask]);
+
+  useEffect(() => {
+    console.log("[TaskWorkspaceClient] task state changed", {
+      taskId: task.id,
+      title: task.title,
+      progress: task.progress,
+      hasVisualData: !!task.visualData,
+      visualType: task.visualData?.type,
+      learningMapCount: task.learningMaps?.length ?? 0,
+      practiceCount: task.practice?.length ?? 0,
+      masterCount: task.master?.length ?? 0,
+    });
+  }, [task]);
+
+  useEffect(() => {
+    console.log("[TaskWorkspaceClient] active tab changed", {
+      taskId: task.id,
+      activeTab,
+      hasAssignment,
+    });
+  }, [activeTab, hasAssignment, task.id]);
+
   const refreshTask = async () => {
+    console.log("[TaskWorkspaceClient] refreshing task from API", { taskId: task.id });
     const res = await fetch(`/api/tasks/${task.id}`);
     if (res.ok) {
       const updated = await res.json();
+      console.log("[TaskWorkspaceClient] task refresh completed", {
+        taskId: task.id,
+        status: res.status,
+        hasVisualData: !!updated?.visualData,
+        visualType: updated?.visualData?.type,
+      });
       setTask(updated);
+    } else {
+      console.warn("[TaskWorkspaceClient] task refresh failed", {
+        taskId: task.id,
+        status: res.status,
+      });
     }
   };
 
   const handlePracticeComplete = async (result: { score: number; weakAreas: string[] }) => {
+    console.log("[TaskWorkspaceClient] practice completed", {
+      taskId: task.id,
+      score: result.score,
+      weakAreas: result.weakAreas,
+    });
     const newProgress = Math.min(100, task.progress + 30);
+    console.log("[TaskWorkspaceClient] updating progress after practice", {
+      taskId: task.id,
+      newProgress,
+    });
     await fetch(`/api/tasks/${task.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -82,7 +135,16 @@ export default function TaskWorkspaceClient({
   };
 
   const handleMasterComplete = async (result: { score: number; passed: boolean; weakAreas: string[] }) => {
+    console.log("[TaskWorkspaceClient] master completed", {
+      taskId: task.id,
+      score: result.score,
+      passed: result.passed,
+      weakAreas: result.weakAreas,
+    });
     if (result.passed) {
+      console.log("[TaskWorkspaceClient] master passed, marking task complete", {
+        taskId: task.id,
+      });
       await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -220,10 +282,24 @@ export default function TaskWorkspaceClient({
   const lessonTabs = ["Learn", "Practice", "Master"] as const;
 
   const handleTabChange = (tab: TabType) => {
+    console.log("[TaskWorkspaceClient] tab change requested", {
+      taskId: task.id,
+      from: activeTab,
+      to: tab,
+    });
     setActiveTab(tab);
   };
 
   console.log("TaskWorkspaceClient visualData:", task.visualData);
+  console.log("[TaskWorkspaceClient] render summary", {
+    taskId: task.id,
+    activeTab,
+    hasVisualData: !!task.visualData,
+    visualType: task.visualData?.type,
+    hasLearningMaps,
+    selectedPresetId,
+    selectedMapId: selectedMap?.presetId,
+  });
 
   return (
     <div className="h-full flex flex-col lg:flex-row bg-background">
@@ -373,7 +449,9 @@ export default function TaskWorkspaceClient({
                 </h2>
                 <div className="rounded-xl border border-border bg-card p-4">
                   {task.visualData ? (
-                    <NewVisualRenderer data={task.visualData} />
+                    <div className="w-full min-h-[300px]">
+                      <NewVisualRenderer data={task.visualData} />
+                    </div>
                   ) : hasLearningMaps ? (
                     <div className="space-y-4">
                       {/* Map selector buttons */}

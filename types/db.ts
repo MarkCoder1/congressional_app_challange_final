@@ -12,6 +12,10 @@ export type TaskRow = {
   assignments: string;
   progress: number;
   status: string;
+  started_at: string | null;
+  completed_at: string | null;
+  last_activity_at: string | null;
+  progress_meta: string | null;
   visualData: string;
   assignmentContent: string;
 };

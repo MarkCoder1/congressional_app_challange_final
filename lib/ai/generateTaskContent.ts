@@ -23,11 +23,27 @@ function generateSmartFallbackQuestions(
   const questions: any[] = [];
   const used = new Set();
   const topic = description.toLowerCase();
-  const isMath = subject.toLowerCase().includes("math") || topic.includes("quadratic") || topic.includes("equation");
-  const isHistory = subject.toLowerCase().includes("history") || topic.includes("timeline") || topic.includes("event");
-  const isBio = subject.toLowerCase().includes("bio") || topic.includes("cell") || topic.includes("organ") || topic.includes("system");
-  const isProgramming = subject.toLowerCase().includes("programming") || topic.includes("code") || topic.includes("algorithm");
-  const isEcon = subject.toLowerCase().includes("economic") || topic.includes("supply") || topic.includes("demand");
+  const isMath =
+    subject.toLowerCase().includes("math") ||
+    topic.includes("quadratic") ||
+    topic.includes("equation");
+  const isHistory =
+    subject.toLowerCase().includes("history") ||
+    topic.includes("timeline") ||
+    topic.includes("event");
+  const isBio =
+    subject.toLowerCase().includes("bio") ||
+    topic.includes("cell") ||
+    topic.includes("organ") ||
+    topic.includes("system");
+  const isProgramming =
+    subject.toLowerCase().includes("programming") ||
+    topic.includes("code") ||
+    topic.includes("algorithm");
+  const isEcon =
+    subject.toLowerCase().includes("economic") ||
+    topic.includes("supply") ||
+    topic.includes("demand");
 
   const addQuestion = (q: any) => {
     if (!used.has(q.text)) {
@@ -40,7 +56,8 @@ function generateSmartFallbackQuestions(
     const mathQuestions = [
       {
         text: "What is the vertex of f(x) = x² - 4x + 3?",
-        hint: level === "practice" ? "Use -b/(2a) for x-coordinate." : undefined,
+        hint:
+          level === "practice" ? "Use -b/(2a) for x-coordinate." : undefined,
         options: [
           { id: "opt1", text: "(2, -1)" },
           { id: "opt2", text: "(-2, 1)" },
@@ -79,7 +96,10 @@ function generateSmartFallbackQuestions(
       },
     ];
     for (let i = 0; i < targetCount; i++) {
-      addQuestion({ ...mathQuestions[i % mathQuestions.length], id: crypto.randomUUID() });
+      addQuestion({
+        ...mathQuestions[i % mathQuestions.length],
+        id: crypto.randomUUID(),
+      });
     }
   } else if (isHistory) {
     const historyQuestions = [
@@ -111,7 +131,10 @@ function generateSmartFallbackQuestions(
       },
     ];
     for (let i = 0; i < targetCount; i++) {
-      addQuestion({ ...historyQuestions[i % historyQuestions.length], id: crypto.randomUUID() });
+      addQuestion({
+        ...historyQuestions[i % historyQuestions.length],
+        id: crypto.randomUUID(),
+      });
     }
   } else if (isBio) {
     const bioQuestions = [
@@ -143,7 +166,10 @@ function generateSmartFallbackQuestions(
       },
     ];
     for (let i = 0; i < targetCount; i++) {
-      addQuestion({ ...bioQuestions[i % bioQuestions.length], id: crypto.randomUUID() });
+      addQuestion({
+        ...bioQuestions[i % bioQuestions.length],
+        id: crypto.randomUUID(),
+      });
     }
   } else if (isProgramming) {
     const progQuestions = [
@@ -175,7 +201,10 @@ function generateSmartFallbackQuestions(
       },
     ];
     for (let i = 0; i < targetCount; i++) {
-      addQuestion({ ...progQuestions[i % progQuestions.length], id: crypto.randomUUID() });
+      addQuestion({
+        ...progQuestions[i % progQuestions.length],
+        id: crypto.randomUUID(),
+      });
     }
   } else if (isEcon) {
     const econQuestions = [
@@ -194,7 +223,10 @@ function generateSmartFallbackQuestions(
       },
     ];
     for (let i = 0; i < targetCount; i++) {
-      addQuestion({ ...econQuestions[i % econQuestions.length], id: crypto.randomUUID() });
+      addQuestion({
+        ...econQuestions[i % econQuestions.length],
+        id: crypto.randomUUID(),
+      });
     }
   } else {
     for (let i = 0; i < targetCount; i++) {
@@ -227,9 +259,21 @@ function getFallbackLearningMaps(subject: string): any[] {
         type: "diagram",
         data: {
           parts: [
-            { label: "Acidic (0-6)", description: "High H+ concentration", position: { x: 20, y: 50 } },
-            { label: "Neutral (7)", description: "Pure water", position: { x: 50, y: 50 } },
-            { label: "Basic (8-14)", description: "Low H+ concentration", position: { x: 80, y: 50 } },
+            {
+              label: "Acidic (0-6)",
+              description: "High H+ concentration",
+              position: { x: 20, y: 50 },
+            },
+            {
+              label: "Neutral (7)",
+              description: "Pure water",
+              position: { x: 50, y: 50 },
+            },
+            {
+              label: "Basic (8-14)",
+              description: "Low H+ concentration",
+              position: { x: 80, y: 50 },
+            },
           ],
         },
       },
@@ -256,9 +300,14 @@ function getFallbackLearningMaps(subject: string): any[] {
         type: "graph",
         data: {
           points: [
-            { x: -2, y: 15 }, { x: -1, y: 8 }, { x: 0, y: 3 },
-            { x: 1, y: 0 }, { x: 2, y: -1 }, { x: 3, y: 0 },
-            { x: 4, y: 3 }, { x: 5, y: 8 },
+            { x: -2, y: 15 },
+            { x: -1, y: 8 },
+            { x: 0, y: 3 },
+            { x: 1, y: 0 },
+            { x: 2, y: -1 },
+            { x: 3, y: 0 },
+            { x: 4, y: 3 },
+            { x: 5, y: 8 },
           ],
           xLabel: "x",
           yLabel: "f(x)",
@@ -285,7 +334,11 @@ function getFallbackLearningMaps(subject: string): any[] {
       type: "node-map",
       data: {
         nodes: [
-          { id: "core", label: "Core Concept", connections: ["related1", "related2"] },
+          {
+            id: "core",
+            label: "Core Concept",
+            connections: ["related1", "related2"],
+          },
           { id: "related1", label: "Related Idea 1", connections: ["core"] },
           { id: "related2", label: "Related Idea 2", connections: ["core"] },
         ],
@@ -294,7 +347,10 @@ function getFallbackLearningMaps(subject: string): any[] {
   ];
 }
 
-const fullFallback = (subject: string, description?: string): FallbackContent => ({
+const fullFallback = (
+  subject: string,
+  description?: string,
+): FallbackContent => ({
   learningContent: {
     overview: `This is an introductory overview of ${subject}. You will learn the fundamental concepts and practical applications.`,
     keyPoints: [
@@ -315,23 +371,54 @@ const fullFallback = (subject: string, description?: string): FallbackContent =>
       : `Take notes on key ${subject} concepts as you learn them for better retention.`,
   },
   learningMaps: getFallbackLearningMaps(subject),
-  practice: generateSmartFallbackQuestions(subject, description || "", "practice", 10),
-  master: generateSmartFallbackQuestions(subject, description || "", "master", 20),
+  practice: generateSmartFallbackQuestions(
+    subject,
+    description || "",
+    "practice",
+    10,
+  ),
+  master: generateSmartFallbackQuestions(
+    subject,
+    description || "",
+    "master",
+    20,
+  ),
 });
 
-function mergeLearningContent(aiContent: any, fallbackContent: LearningContent): LearningContent {
+function mergeLearningContent(
+  aiContent: any,
+  fallbackContent: LearningContent,
+): LearningContent {
   if (!aiContent || typeof aiContent !== "object") return fallbackContent;
   return {
-    overview: typeof aiContent.overview === "string" && aiContent.overview.trim() !== "" ? aiContent.overview : fallbackContent.overview,
-    keyPoints: Array.isArray(aiContent.keyPoints) && aiContent.keyPoints.length > 0 ? aiContent.keyPoints : fallbackContent.keyPoints,
-    example: typeof aiContent.example === "string" && aiContent.example.trim() !== "" ? aiContent.example : fallbackContent.example,
-    steps: Array.isArray(aiContent.steps) && aiContent.steps.length > 0 ? aiContent.steps : fallbackContent.steps,
-    proTip: typeof aiContent.proTip === "string" && aiContent.proTip.trim() !== "" ? aiContent.proTip : fallbackContent.proTip,
+    overview:
+      typeof aiContent.overview === "string" && aiContent.overview.trim() !== ""
+        ? aiContent.overview
+        : fallbackContent.overview,
+    keyPoints:
+      Array.isArray(aiContent.keyPoints) && aiContent.keyPoints.length > 0
+        ? aiContent.keyPoints
+        : fallbackContent.keyPoints,
+    example:
+      typeof aiContent.example === "string" && aiContent.example.trim() !== ""
+        ? aiContent.example
+        : fallbackContent.example,
+    steps:
+      Array.isArray(aiContent.steps) && aiContent.steps.length > 0
+        ? aiContent.steps
+        : fallbackContent.steps,
+    proTip:
+      typeof aiContent.proTip === "string" && aiContent.proTip.trim() !== ""
+        ? aiContent.proTip
+        : fallbackContent.proTip,
   };
 }
 
 // ---------- ASSIGNMENT HELPERS ----------
-function getDefaultAssignmentContent(title: string, description: string): AssignmentContent {
+function getDefaultAssignmentContent(
+  title: string,
+  description: string,
+): AssignmentContent {
   return {
     goal: `Complete the assignment: ${title}. ${description}`,
     understanding: {
@@ -344,14 +431,30 @@ function getDefaultAssignmentContent(title: string, description: string): Assign
     },
     plan: {
       steps: [
-        { id: "step1", title: "Research", description: "Gather information from provided sources." },
-        { id: "step2", title: "Draft", description: "Create an outline and first draft." },
-        { id: "step3", title: "Review & Submit", description: "Revise based on feedback and submit." },
+        {
+          id: "step1",
+          title: "Research",
+          description: "Gather information from provided sources.",
+        },
+        {
+          id: "step2",
+          title: "Draft",
+          description: "Create an outline and first draft.",
+        },
+        {
+          id: "step3",
+          title: "Review & Submit",
+          description: "Revise based on feedback and submit.",
+        },
       ],
     },
     researchGuide: {
       whatToSearch: [`${title} basics`, "real‑world applications"],
-      suggestedSources: ["Textbook chapters", "Academic journals", "Trusted websites"],
+      suggestedSources: [
+        "Textbook chapters",
+        "Academic journals",
+        "Trusted websites",
+      ],
       keywords: [title, "assignment", "analysis"],
     },
     execution: {
@@ -384,11 +487,26 @@ export async function generateTaskContent(input: {
   description: string;
   type: "lesson" | "assignment";
 }): Promise<Partial<Task>> {
+  console.log("[generateTaskContent] start", {
+    title: input.title,
+    subject: input.subject,
+    type: input.type,
+    descriptionLength: input.description.length,
+    hasGroqKey: !!process.env.GROQ_API_KEY,
+  });
+
   if (!process.env.GROQ_API_KEY) {
     console.warn("GROQ_API_KEY missing – using fallback content");
     if (input.type === "assignment") {
-      return { assignmentContent: getDefaultAssignmentContent(input.title, input.description) };
+      console.log("[generateTaskContent] returning assignment fallback");
+      return {
+        assignmentContent: getDefaultAssignmentContent(
+          input.title,
+          input.description,
+        ),
+      };
     } else {
+      console.log("[generateTaskContent] returning lesson fallback");
       return fullFallback(input.subject, input.description);
     }
   }
@@ -442,6 +560,14 @@ Return ONLY valid JSON that matches exactly the following structure. Do NOT incl
 }
 `;
     try {
+      console.log(
+        "[generateTaskContent] generating assignment content via AI",
+        {
+          model: "llama-3.3-70b-versatile",
+          title: input.title,
+          subject: input.subject,
+        },
+      );
       const completion = await groq.chat.completions.create({
         messages: [{ role: "user", content: assignmentPrompt }],
         model: "llama-3.3-70b-versatile",
@@ -449,56 +575,105 @@ Return ONLY valid JSON that matches exactly the following structure. Do NOT incl
         response_format: { type: "json_object" },
       });
       const content = completion.choices[0]?.message?.content;
+      console.log("[generateTaskContent] assignment AI response received", {
+        hasContent: !!content,
+        contentLength: content?.length ?? 0,
+      });
       if (!content) throw new Error("Empty response");
       const parsed = JSON.parse(content);
+      console.log("[generateTaskContent] assignment AI parsed keys", {
+        keys: Object.keys(parsed || {}),
+      });
 
       const assignmentContent: AssignmentContent = {
-        goal: parsed.goal || getDefaultAssignmentContent(input.title, input.description).goal,
+        goal:
+          parsed.goal ||
+          getDefaultAssignmentContent(input.title, input.description).goal,
         understanding: {
-          summary: parsed.understanding?.summary || "Understand the core concepts.",
+          summary:
+            parsed.understanding?.summary || "Understand the core concepts.",
           successCriteria: Array.isArray(parsed.understanding?.successCriteria)
             ? parsed.understanding.successCriteria.slice(0, 3)
-            : getDefaultAssignmentContent(input.title, input.description).understanding.successCriteria,
+            : getDefaultAssignmentContent(input.title, input.description)
+                .understanding.successCriteria,
         },
         plan: {
-          steps: Array.isArray(parsed.plan?.steps) && parsed.plan.steps.length >= 3
-            ? parsed.plan.steps.slice(0, 3).map((step: any, idx: number) => ({
-                id: step.id || `step${idx + 1}`,
-                title: step.title || `Step ${idx + 1}`,
-                description: step.description || "",
-              }))
-            : getDefaultAssignmentContent(input.title, input.description).plan.steps,
+          steps:
+            Array.isArray(parsed.plan?.steps) && parsed.plan.steps.length >= 3
+              ? parsed.plan.steps.slice(0, 3).map((step: any, idx: number) => ({
+                  id: step.id || `step${idx + 1}`,
+                  title: step.title || `Step ${idx + 1}`,
+                  description: step.description || "",
+                }))
+              : getDefaultAssignmentContent(input.title, input.description).plan
+                  .steps,
         },
         researchGuide: {
-          whatToSearch: Array.isArray(parsed.researchGuide?.whatToSearch) ? parsed.researchGuide.whatToSearch.slice(0, 3) : ["Basics", "Applications", "Examples"],
-          suggestedSources: Array.isArray(parsed.researchGuide?.suggestedSources) ? parsed.researchGuide.suggestedSources.slice(0, 3) : ["Textbook", "Academic papers", "Reputable websites"],
-          keywords: Array.isArray(parsed.researchGuide?.keywords) ? parsed.researchGuide.keywords.slice(0, 3) : [input.title, input.subject, "assignment"],
+          whatToSearch: Array.isArray(parsed.researchGuide?.whatToSearch)
+            ? parsed.researchGuide.whatToSearch.slice(0, 3)
+            : ["Basics", "Applications", "Examples"],
+          suggestedSources: Array.isArray(
+            parsed.researchGuide?.suggestedSources,
+          )
+            ? parsed.researchGuide.suggestedSources.slice(0, 3)
+            : ["Textbook", "Academic papers", "Reputable websites"],
+          keywords: Array.isArray(parsed.researchGuide?.keywords)
+            ? parsed.researchGuide.keywords.slice(0, 3)
+            : [input.title, input.subject, "assignment"],
         },
         execution: {
-          structure: Array.isArray(parsed.execution?.structure) && parsed.execution.structure.length >= 2
-            ? parsed.execution.structure
-            : ["Introduction", "Main Body", "Conclusion"],
+          structure:
+            Array.isArray(parsed.execution?.structure) &&
+            parsed.execution.structure.length >= 2
+              ? parsed.execution.structure
+              : ["Introduction", "Main Body", "Conclusion"],
         },
-        checkpoints: Array.isArray(parsed.checkpoints) && parsed.checkpoints.length > 0
-          ? parsed.checkpoints.slice(0, 3).map((cp: any, idx: number) => ({
-              id: cp.id || `cp${idx + 1}`,
-              question: cp.question || "",
-              expectedAnswerHint: cp.expectedAnswerHint,
-            }))
-          : getDefaultAssignmentContent(input.title, input.description).checkpoints,
+        checkpoints:
+          Array.isArray(parsed.checkpoints) && parsed.checkpoints.length > 0
+            ? parsed.checkpoints.slice(0, 3).map((cp: any, idx: number) => ({
+                id: cp.id || `cp${idx + 1}`,
+                question: cp.question || "",
+                expectedAnswerHint: cp.expectedAnswerHint,
+              }))
+            : getDefaultAssignmentContent(input.title, input.description)
+                .checkpoints,
         validation: {
-          checklist: Array.isArray(parsed.validation?.checklist) ? parsed.validation.checklist.slice(0, 3) : ["Clear objective", "Well‑structured", "Evidence provided"],
+          checklist: Array.isArray(parsed.validation?.checklist)
+            ? parsed.validation.checklist.slice(0, 3)
+            : ["Clear objective", "Well‑structured", "Evidence provided"],
           rubric: {
-            clarity: typeof parsed.validation?.rubric?.clarity === "number" ? Math.min(100, Math.max(0, parsed.validation.rubric.clarity)) : 70,
-            completeness: typeof parsed.validation?.rubric?.completeness === "number" ? Math.min(100, Math.max(0, parsed.validation.rubric.completeness)) : 70,
-            structure: typeof parsed.validation?.rubric?.structure === "number" ? Math.min(100, Math.max(0, parsed.validation.rubric.structure)) : 70,
+            clarity:
+              typeof parsed.validation?.rubric?.clarity === "number"
+                ? Math.min(100, Math.max(0, parsed.validation.rubric.clarity))
+                : 70,
+            completeness:
+              typeof parsed.validation?.rubric?.completeness === "number"
+                ? Math.min(
+                    100,
+                    Math.max(0, parsed.validation.rubric.completeness),
+                  )
+                : 70,
+            structure:
+              typeof parsed.validation?.rubric?.structure === "number"
+                ? Math.min(100, Math.max(0, parsed.validation.rubric.structure))
+                : 70,
           },
         },
       };
+      console.log("[generateTaskContent] assignment content normalized", {
+        hasGoal: !!assignmentContent.goal,
+        planSteps: assignmentContent.plan.steps.length,
+        checkpoints: assignmentContent.checkpoints.length,
+      });
       return { assignmentContent };
     } catch (error) {
       console.error("Assignment generation failed, using fallback:", error);
-      return { assignmentContent: getDefaultAssignmentContent(input.title, input.description) };
+      return {
+        assignmentContent: getDefaultAssignmentContent(
+          input.title,
+          input.description,
+        ),
+      };
     }
   }
 
@@ -561,6 +736,11 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
 `;
 
   try {
+    console.log("[generateTaskContent] generating lesson content via AI", {
+      model: ACTIVE_MODEL,
+      title: input.title,
+      subject: input.subject,
+    });
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: lessonPrompt }],
       model: ACTIVE_MODEL,
@@ -569,9 +749,19 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
     });
 
     const content = completion.choices[0]?.message?.content;
+    console.log("[generateTaskContent] lesson AI response received", {
+      hasContent: !!content,
+      contentLength: content?.length ?? 0,
+    });
     if (!content) throw new Error("Empty response from GROQ");
 
     const parsed = JSON.parse(content);
+    console.log("[generateTaskContent] lesson AI parsed keys", {
+      keys: Object.keys(parsed || {}),
+      learningMapCount: parsed.learningMaps?.length ?? 0,
+      practiceCount: parsed.practice?.length ?? 0,
+      masterCount: parsed.master?.length ?? 0,
+    });
     const fallback = fullFallback(input.subject, input.description);
 
     // Remove duplicates
@@ -590,23 +780,46 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
 
     let finalPractice = uniquePractice;
     if (finalPractice.length < 5) {
-      console.warn(`AI generated only ${finalPractice.length} practice questions, using fallback`);
+      console.warn(
+        `AI generated only ${finalPractice.length} practice questions, using fallback`,
+      );
       finalPractice = fallback.practice;
     } else {
       finalPractice = finalPractice.slice(0, 12);
     }
 
+    console.log(
+      "[generateTaskContent] practice question normalization complete",
+      {
+        finalCount: finalPractice.length,
+      },
+    );
+
     let finalMaster = uniqueMaster;
     if (finalMaster.length < 5) {
-      console.warn(`AI generated only ${finalMaster.length} master questions, using fallback`);
+      console.warn(
+        `AI generated only ${finalMaster.length} master questions, using fallback`,
+      );
       finalMaster = fallback.master;
     } else {
       finalMaster = finalMaster.slice(0, 20);
     }
 
+    console.log(
+      "[generateTaskContent] master question normalization complete",
+      {
+        finalCount: finalMaster.length,
+      },
+    );
+
     const ensureOptions = (q: any) => {
       if (q.options && Array.isArray(q.options) && q.options[0]?.id) return q;
-      const opts = q.options || ["Option A", "Option B", "Option C", "Option D"];
+      const opts = q.options || [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D",
+      ];
       return {
         ...q,
         options: opts.map((opt: any, idx: number) => ({
@@ -619,12 +832,29 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
     finalMaster = finalMaster.map(ensureOptions);
 
     let learningMaps = parsed.learningMaps || [];
-    if (learningMaps.length === 0 || !learningMaps[0]?.data || Object.keys(learningMaps[0].data).length === 0) {
+    if (
+      learningMaps.length === 0 ||
+      !learningMaps[0]?.data ||
+      Object.keys(learningMaps[0].data).length === 0
+    ) {
+      console.warn(
+        "[generateTaskContent] AI returned empty learning maps, using fallback maps",
+      );
       learningMaps = fallback.learningMaps;
     }
 
+    console.log("[generateTaskContent] lesson content ready", {
+      hasLearningContent: !!parsed.learningContent,
+      learningMapsCount: learningMaps.length,
+      practiceCount: finalPractice.length,
+      masterCount: finalMaster.length,
+    });
+
     return {
-      learningContent: mergeLearningContent(parsed.learningContent, fallback.learningContent),
+      learningContent: mergeLearningContent(
+        parsed.learningContent,
+        fallback.learningContent,
+      ),
       learningMaps,
       practice: finalPractice,
       master: finalMaster,

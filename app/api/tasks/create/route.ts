@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createTask } from "@/lib/tasks";
 import { Task, TaskType } from "@/types/task";
 import { generateTaskContent } from "@/lib/ai/generateTaskContent";
+import { generateVisualData } from "@/lib/ai/generateVisualData";
 import { randomUUID } from "crypto";
 import { VisualData, TreemapNode } from "@/types/visuals";
 
@@ -205,21 +206,38 @@ function transformToVisualData(visual: any): VisualData | undefined {
   const presetId = visual.presetId || "";
   const type = (visual.type || "").toLowerCase();
 
-  if (isHeatmapData(data)) return convertToHeatmap(data);
+  console.log("[create-task route] transformToVisualData input", {
+    presetId,
+    type,
+    dataKeys: Object.keys(data),
+  });
+
+  if (isHeatmapData(data)) {
+    console.log("[create-task route] detected heatmap visual data");
+    return convertToHeatmap(data);
+  }
   if (
     type === "gantt" ||
     presetId.toLowerCase().includes("gantt") ||
     isGanttData(data)
-  )
+  ) {
+    console.log("[create-task route] detected gantt visual data");
     return convertToGantt(data);
+  }
   if (
     type === "radar" ||
     presetId.toLowerCase().includes("radar") ||
     isRadarData(data)
-  )
+  ) {
+    console.log("[create-task route] detected radar visual data");
     return convertToRadar(data);
+  }
   if (type === "treemap" || presetId.toLowerCase().includes("treemap")) {
     const treemapData = convertToTreemapData(data);
+    console.log("[create-task route] treemap conversion result", {
+      presetId,
+      nodeCount: treemapData.length,
+    });
     if (treemapData.length > 0)
       return {
         type: "treemap",
@@ -231,11 +249,14 @@ function transformToVisualData(visual: any): VisualData | undefined {
     type.includes("chord") ||
     presetId.toLowerCase().includes("chord") ||
     isChordData(data)
-  )
+  ) {
+    console.log("[create-task route] detected chord visual data");
     return convertToChord(data);
+  }
 
   switch (visual.type) {
     case "process":
+      console.log("[create-task route] normalizing process visual");
       return {
         type: "process",
         title: presetId || "Process",
@@ -244,12 +265,14 @@ function transformToVisualData(visual: any): VisualData | undefined {
         outputs: data.outputs,
       };
     case "timeline":
+      console.log("[create-task route] normalizing timeline visual");
       return {
         type: "timeline",
         title: presetId || "Timeline",
         events: data.events || [],
       };
     case "graph":
+      console.log("[create-task route] normalizing graph visual");
       return {
         type: "graph",
         title: presetId || "Graph",
@@ -259,6 +282,7 @@ function transformToVisualData(visual: any): VisualData | undefined {
         graphType: data.graphType || "line",
       };
     case "concept_map":
+      console.log("[create-task route] normalizing concept map visual");
       return {
         type: "concept_map",
         title: presetId || "Concept Map",
@@ -266,12 +290,14 @@ function transformToVisualData(visual: any): VisualData | undefined {
         edges: data.edges || [],
       };
     case "cycle":
+      console.log("[create-task route] normalizing cycle visual");
       return {
         type: "cycle",
         title: presetId || "Cycle",
         stages: data.stages || [],
       };
     case "comparison":
+      console.log("[create-task route] normalizing comparison visual");
       return {
         type: "comparison",
         title: presetId || "Comparison",
@@ -279,12 +305,18 @@ function transformToVisualData(visual: any): VisualData | undefined {
         items: data.items || [],
       };
     case "hierarchy":
+      console.log("[create-task route] normalizing hierarchy visual");
       return {
         type: "hierarchy",
         title: presetId || "Hierarchy",
         root: data.root || {},
       };
     default:
+      console.warn("[create-task route] unable to normalize visual", {
+        visualType: visual.type,
+        presetId,
+        dataKeys: Object.keys(data),
+      });
       return undefined;
   }
 }
@@ -293,12 +325,33 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    console.log("[create-task route] incoming request body", {
+      title: body?.title,
+      subject: body?.subject,
+      type: body?.type,
+      descriptionLength:
+        typeof body?.description === "string" ? body.description.length : 0,
+      hasResources: !!body?.resources,
+      hasAssignments: Array.isArray(body?.assignments),
+    });
+
     if (!body.title || !body.subject || !body.description) {
+      console.warn("[create-task route] missing required fields", {
+        hasTitle: !!body.title,
+        hasSubject: !!body.subject,
+        hasDescription: !!body.description,
+      });
       return NextResponse.json(
         { error: "Missing required fields: title, subject, description" },
         { status: 400 },
       );
     }
+
+    console.log("[create-task route] generating task content", {
+      title: body.title,
+      subject: body.subject,
+      taskType: body.type === "assignment" ? "assignment" : "lesson",
+    });
 
     const generated = await generateTaskContent({
       title: body.title,
@@ -307,17 +360,40 @@ export async function POST(request: NextRequest) {
       type: body.type === "assignment" ? "assignment" : "lesson",
     });
 
+    console.log("[create-task route] task content generated", {
+      hasLearningContent: !!generated.learningContent,
+      learningMapsCount: generated.learningMaps?.length ?? 0,
+      practiceCount: generated.practice?.length ?? 0,
+      masterCount: generated.master?.length ?? 0,
+      hasAssignmentContent: !!generated.assignmentContent,
+    });
+
     let visualData: VisualData | undefined = undefined;
-    if (generated.learningMaps && generated.learningMaps.length > 0) {
-      const raw = generated.learningMaps[0];
-      visualData = transformToVisualData(raw);
+    try {
       console.log(
-        "Transformed visualData:",
-        JSON.stringify(visualData, null, 2),
+        "[create-task route] generating visualData via generateVisualData",
+        {
+          title: body.title,
+          subject: body.subject,
+        },
       );
+      visualData = await generateVisualData({
+        topic: body.title,
+        subject: body.subject,
+        description: body.description,
+      });
+      console.log("[create-task route] generateVisualData result", {
+        visualType: visualData?.type,
+      });
+    } catch (err) {
+      console.error("[create-task route] generateVisualData failed", err);
+      visualData = undefined;
     }
 
     if (!visualData) {
+      console.warn(
+        "[create-task route] no visual data generated, using fallback process visual",
+      );
       visualData = {
         type: "process",
         title: body.title,
@@ -362,7 +438,18 @@ export async function POST(request: NextRequest) {
       visualData: visualData,
     };
 
+    console.log("[create-task route] persisting task", {
+      taskId: task.id,
+      title: task.title,
+      type: task.type,
+      hasVisualData: !!task.visualData,
+      visualType: task.visualData?.type,
+    });
+
     createTask(task);
+    console.log("[create-task route] task persisted successfully", {
+      taskId: task.id,
+    });
     return NextResponse.json({ id: task.id }, { status: 201 });
   } catch (error) {
     console.error("Failed to create task:", error);

@@ -1,21 +1,35 @@
 // /components/assignment/stages/ValidationStage.tsx
+"use client";
 import { useState } from "react";
-import { ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
-import { AssignmentContent, ExternalTool } from "../types";
+import { Trophy, CheckCircle, AlertCircle } from "lucide-react";
 
 interface ValidationStageProps {
-  assignment: AssignmentContent;
+  assignment: any;
   progress: number;
   finalOutput: string;
-  links: string[];
+  links: any[];
   files: any[];
-  externalTools: ExternalTool[];
-  answers: Record<string, string>;
+  externalTools: any[];
+  answers: any;
   taskId: string;
   onPrev: () => void;
 }
 
-export function ValidationStage({
+interface AiReview {
+  overallScore: number;
+  rubric: {
+    clarity: number;
+    completeness: number;
+    structure: number;
+  };
+  checklist: string[];
+  feedback: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  passed?: boolean;
+}
+
+export default function ValidationStage({
   assignment,
   progress,
   finalOutput,
@@ -27,11 +41,13 @@ export function ValidationStage({
   onPrev,
 }: ValidationStageProps) {
   const [submitting, setSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [review, setReview] = useState<AiReview | null>(null);
+  const [error, setError] = useState("");
 
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmission = async () => {
     setSubmitting(true);
-    setSubmitMessage(null);
+    setError("");
+
     try {
       const res = await fetch("/api/assignment/submit", {
         method: "POST",
@@ -40,87 +56,128 @@ export function ValidationStage({
           taskId,
           finalOutput,
           links,
-          files: files.map(f => ({ name: f.name, type: f.type, url: f.url })),
+          files,
           externalTools,
           answers,
+          assignment,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setSubmitMessage("✅ Assignment submitted successfully! Your work has been recorded.");
-      } else {
-        setSubmitMessage("❌ " + data.message);
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
       }
-    } catch (err) {
-      setSubmitMessage("❌ Network error. Please try again.");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit assignment");
+      }
+
+      if (data.review) {
+        setReview(data.review);
+      } else {
+        throw new Error("No review received from server");
+      }
+    } catch (err: any) {
+      console.error("Submission error:", err);
+      setError(err.message || "Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold">📊 Final Validation</h2>
-      <div className="bg-card rounded-xl p-6 border border-border space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">Overall progress</span>
-          <span className="text-2xl font-bold text-accent">{progress}%</span>
-        </div>
-        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-          <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${progress}%` }} />
+  // ... rest of your component stays the same (the review UI part)
+  if (review) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center">
+          <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+          <h2 className="text-3xl font-bold">Assignment Reviewed!</h2>
+          <p className="text-5xl font-bold text-accent mt-4">
+            {review.overallScore}/100
+          </p>
         </div>
 
-        <div className="mt-4 p-4 bg-secondary/20 rounded-lg">
-          <h3 className="font-semibold mb-2">Submission summary</h3>
-          <ul className="space-y-1 text-sm">
-            <li>✍️ Written work: {finalOutput.trim().length > 0 ? "Provided" : "Missing"}</li>
-            <li>🔗 Links added: {links.length}</li>
-            <li>📎 Attachments: {files.length}</li>
-            <li>🛠️ External tools: {externalTools.length}</li>
+        {/* Submission Summary */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-4">📊 Submission Summary</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>✍️ Written work: <strong>Provided</strong></div>
+            <div>🔗 Links added: <strong>{links.length}</strong></div>
+            <div>📎 Attachments: <strong>{files.length}</strong></div>
+            <div>🛠️ External tools: <strong>{externalTools.length}</strong></div>
+          </div>
+        </div>
+
+        {/* Checklist */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-4">✅ Checklist</h3>
+          <ul className="space-y-2">
+            {review.checklist?.map((item: string, i: number) => (
+              <li key={i} className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <h3 className="font-semibold mb-2">✅ Checklist</h3>
-            <ul className="space-y-1">
-              {assignment.validation.checklist.map((item, i) => (
-                <li key={i} className="text-sm flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">📐 Rubric</h3>
-            <div className="space-y-1 text-sm">
-              <div>Clarity: {assignment.validation.rubric.clarity}%</div>
-              <div>Completeness: {assignment.validation.rubric.completeness}%</div>
-              <div>Structure: {assignment.validation.rubric.structure}%</div>
-            </div>
+        {/* Rubric */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-4">📐 Rubric</h3>
+          <div className="space-y-4">
+            {Object.entries(review.rubric || {}).map(([key, score]) => (
+              <div key={key} className="flex justify-between items-center">
+                <span className="capitalize">{key}</span>
+                <span className="font-semibold text-accent">
+                  {typeof score === "number" ? score : 0}%
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex justify-between gap-3 pt-4">
-          <button onClick={onPrev} className="btn-secondary flex items-center gap-1">
-            <ChevronLeft size={16} /> Back
-          </button>
-          <button
-            onClick={handleFinalSubmit}
-            disabled={submitting}
-            className="btn-primary flex items-center gap-2"
-          >
-            {submitting ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-            {submitting ? "Submitting..." : "Final Submission"}
-          </button>
+        {/* Feedback */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-3">Teacher Feedback</h3>
+          <p className="leading-relaxed text-muted-foreground">
+            {review.feedback}
+          </p>
         </div>
-        {submitMessage && (
-          <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 text-green-800 dark:text-green-400 text-sm">
-            {submitMessage}
-          </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">📊 Final Validation</h2>
+      <div className="bg-card border border-border rounded-xl p-6">
+        <p className="text-sm text-muted-foreground mb-6">
+          Review everything one last time before submitting for AI grading.
+        </p>
+
+        <button
+          onClick={handleFinalSubmission}
+          disabled={submitting || !finalOutput?.trim()}
+          className="w-full py-4 bg-accent hover:bg-accent/90 text-white font-semibold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+        >
+          {submitting ? "AI is Grading..." : "Submit for Final Review"}
+        </button>
+
+        {error && (
+          <p className="text-red-500 text-sm mt-3 flex items-center gap-2">
+            <AlertCircle size={16} /> {error}
+          </p>
         )}
       </div>
+
+      <button
+        onClick={onPrev}
+        className="text-sm text-muted-foreground hover:text-foreground"
+      >
+        ← Go Back
+      </button>
     </div>
   );
 }
