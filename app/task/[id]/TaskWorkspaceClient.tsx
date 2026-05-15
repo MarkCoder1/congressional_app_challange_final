@@ -1,7 +1,7 @@
 // /app/task/[id]/TaskWorkspaceClient.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Play,
   BookOpen,
@@ -14,14 +14,12 @@ import {
   CheckCircle2,
   ListChecks,
   GraduationCap,
-  ArrowRight,
   Sparkles,
   Brain,
   FileText,
   Eye,
-  GitBranch,
-  BarChart3,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PracticeMode } from "@/components/practice-mode";
 import { MasterMode } from "@/components/master-mode";
 import { EmptyState } from "@/components/EmptyState";
@@ -31,17 +29,17 @@ import {
 } from "@/lib/learningMapPresets";
 import { Subject } from "@/lib/types";
 import { Task, AssignmentContent } from "@/types/task";
+import { TaskProgressUpdateInput } from "@/lib/progress/taskProgressEngine";
+import { updateTaskProgress } from "@/lib/progress/updateTaskProgress";
 // NEW visual renderer (for AI-generated visuals) – expects only `data`
 import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer";
 // OLD visual renderer (for legacy learningMaps) – expects `type` and `data`
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
 
-// All possible tabs – Assignment will be added conditionally
-const ALL_TABS = ["Learn", "Practice", "Master", "Assignment"] as const;
-type TabType = (typeof ALL_TABS)[number];
+type TabType = "Learn" | "Practice" | "Master" | "Assignment";
 
-const tabIcons: Record<string, any> = {
+const tabIcons: Record<TabType, LucideIcon> = {
   Learn: BookOpen,
   Practice: Zap,
   Master: Trophy,
@@ -54,14 +52,30 @@ interface TaskWorkspaceClientProps {
   hasAssignment: boolean;
 }
 
+const statusLabelMap: Record<Task["status"], string> = {
+  not_started: "Not Started",
+  in_progress: "In Progress",
+  completed: "Completed",
+};
+
+const statusPillClassMap: Record<Task["status"], string> = {
+  not_started: "bg-secondary text-muted-foreground",
+  in_progress: "bg-blue-100 text-blue-700",
+  completed: "bg-green-100 text-green-700",
+};
+
 export default function TaskWorkspaceClient({
   initialTask,
   assignment,
   hasAssignment,
 }: TaskWorkspaceClientProps) {
   const [task, setTask] = useState<Task>(initialTask);
-  const [activeTab, setActiveTab] = useState<TabType>("Learn");
+  const [activeTab, setActiveTab] = useState<TabType>(
+    hasAssignment ? "Assignment" : "Learn",
+  );
   const [selectedPresetId, setSelectedPresetId] = useState("");
+  const lessonStartSentRef = useRef(!!initialTask.startedAt);
+  const learnViewSentRef = useRef(!!initialTask.progressMeta?.learnCompleted);
 
   useEffect(() => {
     console.log("[TaskWorkspaceClient] mounted", {
@@ -85,6 +99,9 @@ export default function TaskWorkspaceClient({
       practiceCount: task.practice?.length ?? 0,
       masterCount: task.master?.length ?? 0,
     });
+
+    lessonStartSentRef.current = !!task.startedAt;
+    learnViewSentRef.current = !!task.progressMeta?.learnCompleted;
   }, [task]);
 
   useEffect(() => {
@@ -95,7 +112,7 @@ export default function TaskWorkspaceClient({
     });
   }, [activeTab, hasAssignment, task.id]);
 
-  const refreshTask = async () => {
+  const refreshTask = useCallback(async () => {
     console.log("[TaskWorkspaceClient] refreshing task from API", { taskId: task.id });
     const res = await fetch(`/api/tasks/${task.id}`);
     if (res.ok) {
@@ -113,6 +130,58 @@ export default function TaskWorkspaceClient({
         status: res.status,
       });
     }
+  }, [task.id]);
+
+  const applyProgressUpdate = useCallback(async (updates: TaskProgressUpdateInput) => {
+    try {
+      await updateTaskProgress(task.id, updates);
+      await refreshTask();
+    } catch (error) {
+      console.error("[TaskWorkspaceClient] failed to update task progress", {
+        taskId: task.id,
+        updates,
+        error,
+      });
+    }
+  }, [refreshTask, task.id]);
+
+  useEffect(() => {
+    if (task.type !== "lesson") return;
+    if (activeTab !== "Learn") return;
+    if (task.startedAt || lessonStartSentRef.current) return;
+
+    lessonStartSentRef.current = true;
+    applyProgressUpdate({ lessonEvent: "learn_entered" });
+  }, [activeTab, applyProgressUpdate, task.startedAt, task.type]);
+
+  useEffect(() => {
+    if (task.type !== "lesson") return;
+    if (activeTab !== "Learn") return;
+    if (task.progressMeta?.learnCompleted || learnViewSentRef.current) return;
+
+    learnViewSentRef.current = true;
+    applyProgressUpdate({ lessonEvent: "learn_viewed" });
+  }, [activeTab, applyProgressUpdate, task.progressMeta?.learnCompleted, task.type]);
+
+  const handleManualProgressAction = async (
+    action: "increase" | "decrease" | "complete" | "reset",
+  ) => {
+    if (action === "increase") {
+      await applyProgressUpdate({ manualDelta: 10 });
+      return;
+    }
+
+    if (action === "decrease") {
+      await applyProgressUpdate({ manualDelta: -10 });
+      return;
+    }
+
+    if (action === "complete") {
+      await applyProgressUpdate({ markCompleted: true });
+      return;
+    }
+
+    await applyProgressUpdate({ reset: true });
   };
 
   const handlePracticeComplete = async (result: { score: number; weakAreas: string[] }) => {
@@ -121,17 +190,10 @@ export default function TaskWorkspaceClient({
       score: result.score,
       weakAreas: result.weakAreas,
     });
-    const newProgress = Math.min(100, task.progress + 30);
-    console.log("[TaskWorkspaceClient] updating progress after practice", {
-      taskId: task.id,
-      newProgress,
+    await applyProgressUpdate({
+      lessonEvent: "practice_completed",
+      lessonScore: result.score,
     });
-    await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ progress: newProgress }),
-    });
-    await refreshTask();
   };
 
   const handleMasterComplete = async (result: { score: number; passed: boolean; weakAreas: string[] }) => {
@@ -145,13 +207,14 @@ export default function TaskWorkspaceClient({
       console.log("[TaskWorkspaceClient] master passed, marking task complete", {
         taskId: task.id,
       });
-      await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress: 100, status: "completed" }),
+      await applyProgressUpdate({
+        lessonEvent: "master_completed",
       });
-      await refreshTask();
     } else {
+      await applyProgressUpdate({
+        lessonEvent: "master_failed",
+        lessonScore: result.score,
+      });
       alert("Score below 80%. Please review the material and retry.");
     }
   };
@@ -190,24 +253,51 @@ export default function TaskWorkspaceClient({
                 {task.subject}
               </span>
             </div>
+            <div className="mb-4">
+              <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
+                {statusLabelMap[task.status]}
+              </span>
+            </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar size={16} />
-                <span>Due: {task.deadline || "TBD"}</span>
+                <span>Due: { }</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock size={16} />
                 <span>Estimated: 2 hours</span>
+
               </div>
             </div>
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Progress</span>
+              <span className="text-sm font-medium">{task.progress}% Complete</span>
               <span className="text-sm font-semibold text-accent">{task.progress}%</span>
             </div>
             <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
               <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${task.progress}%` }} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {task.completedAt
+                ? `Completed ${new Date(task.completedAt).toLocaleDateString()}`
+                : task.startedAt
+                  ? `Started ${new Date(task.startedAt).toLocaleDateString()}`
+                  : "Not started yet"}
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
+                +10%
+              </button>
+              <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
+                -10%
+              </button>
+              <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1.5 rounded-md bg-green-100 text-green-700 hover:opacity-90 transition-opacity">
+                Mark Complete
+              </button>
+              <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1.5 rounded-md bg-red-100 text-red-700 hover:opacity-90 transition-opacity">
+                Reset
+              </button>
             </div>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>
@@ -240,7 +330,14 @@ export default function TaskWorkspaceClient({
             </div>
           </div>
           <div className="flex-1 overflow-auto p-6">
-            {isAssignmentTab && <AssignmentWorkspace assignment={assignment} taskId={task.id} />}
+            {isAssignmentTab && (
+              <AssignmentWorkspace
+                assignment={assignment}
+                taskId={task.id}
+                taskProgress={task.progress}
+                onTaskRefresh={refreshTask}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -252,7 +349,7 @@ export default function TaskWorkspaceClient({
     id: task.id,
     title: task.title,
     subject: (task.subject || "General") as Subject,
-    deadline: task.deadline ?? "TBD",
+    deadline: task.deadline,
     progress: task.progress ?? 0,
     description: task.description || "",
   };
@@ -277,6 +374,8 @@ export default function TaskWorkspaceClient({
     example: "No example provided.",
     steps: [],
   };
+
+  console.log("TASK DEADLINE VALUE:", task.deadline);
 
   // Only show Learn/Practice/Master tabs (no Assignment)
   const lessonTabs = ["Learn", "Practice", "Master"] as const;
@@ -312,11 +411,50 @@ export default function TaskWorkspaceClient({
               {taskData.subject}
             </span>
           </div>
+          <div className="mb-4">
+            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
+              {statusLabelMap[task.status]}
+            </span>
+          </div>
           <div className="space-y-2 text-sm">
+            {/* Deadline Display */}
+            {/* Deadline Display - Safe Version */}
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar size={16} />
-              <span>Due: {taskData.deadline}</span>
+              {task.deadline && task.deadline !== "TBD" && task.deadline !== "null" ? (
+                (() => {
+                  const dueDate = new Date(task.deadline);
+                  const isValid = !isNaN(dueDate.getTime());
+                  const isOverdue = isValid && dueDate < new Date();
+
+                  return (
+                    <span>
+                      Due{" "}
+                      <span className={`font-medium ${isOverdue ? "text-red-600" : "text-foreground"}`}>
+                        {isValid
+                          ? dueDate.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                          : "Invalid Date"
+                        }
+                      </span>
+                      {isValid && task.deadline.includes("T") && (
+                        <span className="text-xs ml-1">
+                          • {dueDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })()
+              ) : (
+                <span>No deadline set</span>
+              )}
             </div>
+
+            {/* Estimated Time */}
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock size={16} />
               <span>Estimated: 2 hours</span>
@@ -325,11 +463,32 @@ export default function TaskWorkspaceClient({
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Progress</span>
+            <span className="text-sm font-medium">{taskData.progress}% Complete</span>
             <span className="text-sm font-semibold text-accent">{taskData.progress}%</span>
           </div>
           <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
             <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${taskData.progress}%` }} />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {task.completedAt
+              ? `Completed ${new Date(task.completedAt).toLocaleDateString()}`
+              : task.startedAt
+                ? `Started ${new Date(task.startedAt).toLocaleDateString()}`
+                : "Not started yet"}
+          </p>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
+              +10%
+            </button>
+            <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
+              -10%
+            </button>
+            <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1.5 rounded-md bg-green-100 text-green-700 hover:opacity-90 transition-opacity">
+              Mark Complete
+            </button>
+            <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1.5 rounded-md bg-red-100 text-red-700 hover:opacity-90 transition-opacity">
+              Reset
+            </button>
           </div>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">{taskData.description}</p>
@@ -366,7 +525,7 @@ export default function TaskWorkspaceClient({
           {activeTab === "Learn" && (
             <div className="p-6 space-y-6 fade-in-panel">
               {/* Hero Banner */}
-              <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20">
+              <div className="bg-linear-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -391,7 +550,7 @@ export default function TaskWorkspaceClient({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {learningContent.keyPoints.map((point, idx) => (
                       <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
-                        <CheckCircle2 size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 size={18} className="text-accent shrink-0 mt-0.5" />
                         <p className="text-sm text-foreground/80">{point}</p>
                       </div>
                     ))}
@@ -420,7 +579,7 @@ export default function TaskWorkspaceClient({
                   <div className="space-y-3">
                     {learningContent.steps.map((step, idx) => (
                       <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
                           {idx + 1}
                         </div>
                         <p className="text-sm text-foreground/80">{step}</p>
@@ -431,13 +590,13 @@ export default function TaskWorkspaceClient({
               )}
 
               {/* Pro Tip */}
-              {(learningContent as any).proTip && (
+              {learningContent.proTip && (
                 <div className="space-y-3">
                   <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <Sparkles size={20} /> Pro Tip
                   </h2>
                   <div className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {(learningContent as any).proTip}</p>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {learningContent.proTip}</p>
                   </div>
                 </div>
               )}
@@ -449,7 +608,7 @@ export default function TaskWorkspaceClient({
                 </h2>
                 <div className="rounded-xl border border-border bg-card p-4">
                   {task.visualData ? (
-                    <div className="w-full min-h-[300px]">
+                    <div className="w-full min-h-75">
                       <NewVisualRenderer data={task.visualData} />
                     </div>
                   ) : hasLearningMaps ? (
@@ -529,28 +688,6 @@ export default function TaskWorkspaceClient({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function AccordionSection({
-  label,
-  open,
-  onToggle,
-  children,
-}: {
-  label: string;
-  open: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border border-border rounded-lg">
-      <button className="w-full flex items-center justify-between p-3 text-sm font-medium" onClick={onToggle}>
-        <span>{label}</span>
-        <span>{open ? "−" : "+"}</span>
-      </button>
-      {open && <div className="px-3 pb-3">{children}</div>}
     </div>
   );
 }

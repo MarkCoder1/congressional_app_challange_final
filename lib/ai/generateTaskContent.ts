@@ -779,7 +779,7 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
     });
 
     let finalPractice = uniquePractice;
-    if (finalPractice.length < 5) {
+    if (finalPractice.length < 3) {
       console.warn(
         `AI generated only ${finalPractice.length} practice questions, using fallback`,
       );
@@ -796,7 +796,7 @@ CRITICAL: Questions must be directly relevant to the task's title and descriptio
     );
 
     let finalMaster = uniqueMaster;
-    if (finalMaster.length < 5) {
+    if (finalMaster.length < 3) {
       console.warn(
         `AI generated only ${finalMaster.length} master questions, using fallback`,
       );

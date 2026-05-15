@@ -33,7 +33,12 @@ export type TaskProgressUpdateInput = {
 
 export type TaskProgressResult = Pick<
   Task,
-  "progress" | "status" | "startedAt" | "completedAt" | "lastActivityAt" | "progressMeta"
+  | "progress"
+  | "status"
+  | "startedAt"
+  | "completedAt"
+  | "lastActivityAt"
+  | "progressMeta"
 >;
 
 const clamp = (value: number) => Math.min(100, Math.max(0, Math.round(value)));
@@ -44,17 +49,27 @@ function ensureStatus(progress: number, status?: TaskStatus): TaskStatus {
   return "not_started";
 }
 
-function uniqueStages(stages: AssignmentWorkflowStage[]): AssignmentWorkflowStage[] {
+function uniqueStages(
+  stages: AssignmentWorkflowStage[],
+): AssignmentWorkflowStage[] {
   return [...new Set(stages)];
 }
 
-function calculateAssignmentWorkflowProgress(stages: AssignmentWorkflowStage[]): number {
+function calculateAssignmentWorkflowProgress(
+  stages: AssignmentWorkflowStage[],
+): number {
   return clamp(
-    uniqueStages(stages).reduce((sum, stage) => sum + ASSIGNMENT_STAGE_WEIGHTS[stage], 0),
+    uniqueStages(stages).reduce(
+      (sum, stage) => sum + ASSIGNMENT_STAGE_WEIGHTS[stage],
+      0,
+    ),
   );
 }
 
-export function calculateTaskProgress(task: Task, updates: TaskProgressUpdateInput = {}): TaskProgressResult {
+export function calculateTaskProgress(
+  task: Task,
+  updates: TaskProgressUpdateInput = {},
+): TaskProgressResult {
   const now = new Date().toISOString();
   const progressMeta: TaskProgressMeta = { ...(task.progressMeta ?? {}) };
 
@@ -126,7 +141,9 @@ export function calculateTaskProgress(task: Task, updates: TaskProgressUpdateInp
     const stages = uniqueStages([
       ...(progressMeta.assignmentSectionsCompleted ?? []),
       ...(updates.assignmentStagesCompleted ?? []),
-      ...(updates.assignmentStageCompleted ? [updates.assignmentStageCompleted] : []),
+      ...(updates.assignmentStageCompleted
+        ? [updates.assignmentStageCompleted]
+        : []),
       ...(updates.workflowAdvancedTo ? [updates.workflowAdvancedTo] : []),
       ...(updates.submissionValidated ? ["submission"] : []),
     ]);
@@ -134,7 +151,8 @@ export function calculateTaskProgress(task: Task, updates: TaskProgressUpdateInp
     if (stages.length > 0) {
       markStarted();
       progressMeta.assignmentSectionsCompleted = stages;
-      progressMeta.assignmentWorkflowProgress = calculateAssignmentWorkflowProgress(stages);
+      progressMeta.assignmentWorkflowProgress =
+        calculateAssignmentWorkflowProgress(stages);
       progress = Math.max(progress, progressMeta.assignmentWorkflowProgress);
     }
 
@@ -192,7 +210,10 @@ export function calculateTaskProgress(task: Task, updates: TaskProgressUpdateInp
   };
 }
 
-export function updateTaskProgress(task: Task, updates: TaskProgressUpdateInput = {}): TaskProgressResult {
+export function updateTaskProgress(
+  task: Task,
+  updates: TaskProgressUpdateInput = {},
+): TaskProgressResult {
   return calculateTaskProgress(task, updates);
 }
 

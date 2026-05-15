@@ -149,6 +149,10 @@ export interface Task {
   resources: Record<string, any>;
   assignments: any[];
   visualData?: VisualData;
+
+  // NEW: Deadline
+  deadlineDate?: string;       // Optional: "2026-06-15"
+  deadlineTime?: string;       // Optional: "23:59"
 }
 
 export interface AnswerAnalysis {
@@ -163,4 +167,3 @@ export interface AnswerAnalysis {
 export interface FeedbackResponse {
   feedback: string;
 }
-

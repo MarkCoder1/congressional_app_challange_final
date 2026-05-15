@@ -13,13 +13,16 @@ import { CheckpointsStage } from "./stages/CheckpointsStage";
 import { QualityStage } from "./stages/QualityStage";
 import ValidationStage from "./stages/ValidationStage";
 import { AssignmentContent } from "./types";
+import { AssignmentWorkflowStage } from "@/types/task";
 
 interface AssignmentWorkspaceProps {
   assignment: AssignmentContent;
   taskId: string;
+  taskProgress: number;
+  onTaskRefresh: () => Promise<void>;
 }
 
-export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWorkspaceProps) {
+export default function AssignmentWorkspace({ assignment, taskId, taskProgress, onTaskRefresh }: AssignmentWorkspaceProps) {
   const {
     // Rename the hook's `assignment` to `fullAssignment` to avoid naming conflict with prop
     assignment: fullAssignment,
@@ -53,7 +56,6 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
     autoBuildPlan,
     runValidation, improveText,
     nextStage, prevStage,
-    progress,
   } = useAssignmentWorkspace(assignment);
 
   // ----- Refs for latest state (avoid stale closures in saveProgress) -----
@@ -68,6 +70,7 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
   const validatorInputRef = useRef(validatorInput);
   const validatorResultRef = useRef(validatorResult);
   const improvedTextRef = useRef(improvedText);
+  const stageRef = useRef(stage);
 
   useEffect(() => { completedStepsRef.current = completedSteps; }, [completedSteps]);
   useEffect(() => { answersRef.current = answers; }, [answers]);
@@ -80,6 +83,7 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
   useEffect(() => { validatorInputRef.current = validatorInput; }, [validatorInput]);
   useEffect(() => { validatorResultRef.current = validatorResult; }, [validatorResult]);
   useEffect(() => { improvedTextRef.current = improvedText; }, [improvedText]);
+  useEffect(() => { stageRef.current = stage; }, [stage]);
 
   // ----- Persistence state -----
   const [isLoading, setIsLoading] = useState(true);
@@ -116,12 +120,46 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
 
   // ----- Auto‑save function (uses refs to get latest state) -----
   const saveProgress = async () => {
+    const completedStages: AssignmentWorkflowStage[] = ["overview"];
+    const hasAllPlanSteps =
+      assignment.plan.steps.length > 0 &&
+      assignment.plan.steps.every((step) => completedStepsRef.current[step.id]);
+    const hasResearch = researchItemsRef.current.length > 0;
+    const hasExecution =
+      executionStepsRef.current.some((s) => s.completed) ||
+      finalOutputRef.current.trim().length > 0 ||
+      linksRef.current.length > 0 ||
+      filesRef.current.length > 0 ||
+      externalToolsRef.current.length > 0;
+    const hasAllCheckpoints =
+      assignment.checkpoints.length > 0 &&
+      assignment.checkpoints.every((cp) => (answersRef.current[cp.id] || "").trim().length > 0);
+    const hasQualityReview =
+      !!validatorResultRef.current || improvedTextRef.current.trim().length > 0;
+    const hasValidation =
+      finalOutputRef.current.trim().length > 0 ||
+      linksRef.current.length > 0 ||
+      filesRef.current.length > 0 ||
+      externalToolsRef.current.length > 0;
+
+    if (hasAllPlanSteps) completedStages.push("planning");
+    if (hasResearch) completedStages.push("research");
+    if (hasExecution) completedStages.push("execution");
+    if (hasAllCheckpoints) completedStages.push("checkpoints");
+    if (hasQualityReview) completedStages.push("quality");
+    if (hasValidation) completedStages.push("validation");
+
+    const toWorkflowStage = (value: string): AssignmentWorkflowStage => {
+      if (value === "plan") return "planning";
+      return value as AssignmentWorkflowStage;
+    };
+
     const progressData = {
       completedSteps: completedStepsRef.current,
       answers: answersRef.current,
       finalOutput: finalOutputRef.current,
       links: linksRef.current,
-      files: filesRef.current.map((f: any) => ({ name: f.name, type: f.type })),
+      files: filesRef.current.map((f) => ({ name: f.name, type: f.type })),
       externalTools: externalToolsRef.current,
       executionSteps: executionStepsRef.current,
       researchItems: researchItemsRef.current,
@@ -133,10 +171,24 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
       await fetch("/api/assignment/progress/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, progressData }),
+        body: JSON.stringify({
+          taskId,
+          progressData,
+          completedStages,
+          currentStage: toWorkflowStage(stageRef.current),
+        }),
       });
+      await onTaskRefresh();
     } catch (err) {
       console.error("Auto-save failed:", err);
+    }
+  };
+
+  const handleSubmissionSuccess = async () => {
+    try {
+      await onTaskRefresh();
+    } catch (err) {
+      console.error("Failed to mark assignment submission progress:", err);
     }
   };
 
@@ -252,7 +304,7 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
         return (
           <ValidationStage
             assignment={fullAssignment}
-            progress={progress}
+            progress={taskProgress}
             finalOutput={finalOutput}
             links={links}
             files={files}
@@ -260,6 +312,7 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
             answers={answers}
             taskId={taskId}
             onPrev={prevStage}
+            onSubmissionSuccess={handleSubmissionSuccess}
           />
         );
       default:
@@ -269,9 +322,9 @@ export default function AssignmentWorkspace({ assignment, taskId }: AssignmentWo
 
   return (
     <div className="max-w-4xl mx-auto py-6 space-y-6">
-      <ProgressBar progress={progress} />
+      <ProgressBar progress={taskProgress} />
       <WorkspaceStages currentStage={stage} onStageChange={setStage} />
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 min-h-[500px] transition-all">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 min-h-125 transition-all">
         {renderStage()}
       </div>
     </div>

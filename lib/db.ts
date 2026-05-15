@@ -33,11 +33,12 @@ db.prepare(`
     progress_meta TEXT DEFAULT '{}',
     visualData TEXT DEFAULT '{}',
     assignmentContent TEXT DEFAULT '{}',
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deadline TEXT                    -- ← Fixed: comma was missing before
   )
 `).run();
 
-// ========== ASSIGNMENT PROGRESS TABLE ==========
+// ========== OTHER TABLES ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS assignment_progress (
     id TEXT PRIMARY KEY,
@@ -47,7 +48,6 @@ db.prepare(`
   )
 `).run();
 
-// ========== NEW: ASSIGNMENT SUBMISSIONS TABLE ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS assignment_submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,39 +57,15 @@ db.prepare(`
   )
 `).run();
 
-// ========== MIGRATIONS (for existing DBs) ==========
+// ========== MIGRATIONS ==========
 const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
-const columns = tableInfo.map(c => c.name);
+const columns = tableInfo.map((c) => c.name);
 
-if (!columns.includes("updated_at")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+if (!columns.includes("deadline")) {
+  console.log("🔧 Adding deadline column...");
+  db.prepare("ALTER TABLE tasks ADD COLUMN deadline TEXT").run();
 }
 
-if (!columns.includes("started_at")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN started_at TEXT").run();
-}
-
-if (!columns.includes("completed_at")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN completed_at TEXT").run();
-}
-
-if (!columns.includes("last_activity_at")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN last_activity_at TEXT").run();
-}
-
-if (!columns.includes("progress_meta")) {
-  db.prepare("ALTER TABLE tasks ADD COLUMN progress_meta TEXT DEFAULT '{}'").run();
-}
-
-// Progress table migration
-const progressInfo = db.prepare("PRAGMA table_info(assignment_progress)").all() as Array<{ name: string }>;
-const pCols = progressInfo.map(c => c.name);
-
-if (!pCols.includes("task_id")) {
-  db.prepare("ALTER TABLE assignment_progress ADD COLUMN task_id TEXT").run();
-}
-
-// Final check
-console.log("✅ Database initialized with assignment_submissions table");
+console.log("✅ Database initialized with deadline support");
 
 export default db;

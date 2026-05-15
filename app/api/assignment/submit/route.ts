@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { db } from "@/lib/db";
+import { updateTaskProgress } from "@/lib/tasks";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { taskId, finalOutput, links = [], files = [], externalTools = [], answers = {}, assignment } = body;
+    const {
+      taskId,
+      finalOutput,
+      links = [],
+      files = [],
+      externalTools = [],
+      answers = {},
+      assignment,
+    } = body;
 
     if (!taskId || !finalOutput?.trim()) {
-      return NextResponse.json({ error: "Missing taskId or final output" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing taskId or final output" },
+        { status: 400 },
+      );
     }
 
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: "GROQ_API_KEY not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "GROQ_API_KEY not configured" },
+        { status: 500 },
+      );
     }
 
     const prompt = `
@@ -45,7 +60,9 @@ Return ONLY valid JSON:
       response_format: { type: "json_object" },
     });
 
-    const aiResult = JSON.parse(completion.choices[0]?.message?.content || "{}");
+    const aiResult = JSON.parse(
+      completion.choices[0]?.message?.content || "{}",
+    );
 
     // Save to DB
     const submissionData = {
@@ -56,25 +73,35 @@ Return ONLY valid JSON:
       externalTools,
       checkpointAnswers: answers,
       aiReview: aiResult,
-      status: "graded"
+      status: "graded",
     };
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO assignment_submissions (task_id, submission_data, submitted_at)
       VALUES (?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(task_id) DO UPDATE SET
         submission_data = excluded.submission_data,
         submitted_at = CURRENT_TIMESTAMP
-    `).run(taskId, JSON.stringify(submissionData));
+    `,
+    ).run(taskId, JSON.stringify(submissionData));
 
-    db.prepare(`UPDATE tasks SET progress = 100, status = 'completed' WHERE id = ?`).run(taskId);
+    updateTaskProgress(taskId, {
+      assignmentStageCompleted: "submission",
+      submissionValidated: true,
+      markCompleted: true,
+    });
 
     return NextResponse.json({ success: true, review: aiResult });
-
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to grade assignment";
     console.error("[Assignment Submit Error]:", error);
-    return NextResponse.json({ 
-      error: error.message || "Failed to grade assignment" 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: message,
+      },
+      { status: 500 },
+    );
   }
 }

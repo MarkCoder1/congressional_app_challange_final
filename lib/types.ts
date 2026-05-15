@@ -37,7 +37,8 @@ export type {
   ComparisonItem,
 } from "./learningMapPresets";
 
-export type Subject =
+// Allow any string for subject (more flexible)
+export type Subject = 
   | "Math"
   | "History"
   | "Science"
@@ -49,9 +50,20 @@ export type Subject =
   | "Literature"
   | "Geography"
   | "Chemistry"
-  | "Economics";
+  | "Economics"
+  | string;   
 export type TaskType = "concept" | "lesson" | "assignment" | "mixed";
 export type PriorityLevel = "low" | "medium" | "high";
+export type TaskStatus = "not_started" | "in_progress" | "completed";
+
+export interface TaskProgressMeta {
+  learnCompleted?: boolean;
+  practiceCompleted?: boolean;
+  masterCompleted?: boolean;
+  assignmentWorkflowProgress?: number;
+  assignmentSectionsCompleted?: string[];
+  manuallyAdjusted?: boolean;
+}
 
 export interface Task {
   id: string;
@@ -63,6 +75,11 @@ export interface Task {
   priority: PriorityLevel;
   description?: string;
   progress: number;
+  status?: TaskStatus;
+  startedAt?: string;
+  completedAt?: string;
+  lastActivityAt?: string;
+  progressMeta?: TaskProgressMeta;
   createdAt: string;
   learningMapPreset?: string;
   learningMap?: LearningMapPreset;

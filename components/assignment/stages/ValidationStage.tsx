@@ -13,6 +13,7 @@ interface ValidationStageProps {
   answers: any;
   taskId: string;
   onPrev: () => void;
+  onSubmissionSuccess?: () => Promise<void>;
 }
 
 interface AiReview {
@@ -39,6 +40,7 @@ export default function ValidationStage({
   answers,
   taskId,
   onPrev,
+  onSubmissionSuccess,
 }: ValidationStageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [review, setReview] = useState<AiReview | null>(null);
@@ -76,6 +78,9 @@ export default function ValidationStage({
 
       if (data.review) {
         setReview(data.review);
+        if (onSubmissionSuccess) {
+          await onSubmissionSuccess();
+        }
       } else {
         throw new Error("No review received from server");
       }

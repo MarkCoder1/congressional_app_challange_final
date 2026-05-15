@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTaskById } from "@/lib/tasks";
+import type { TaskProgressUpdateInput } from "@/lib/progress/taskProgressEngine";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const task = getTaskById(id);
@@ -13,21 +14,33 @@ export async function GET(
   return NextResponse.json(task);
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const body = await request.json();
-  const { progress, status } = body;
-  
-  // Optional: update progress / status
-  if (progress !== undefined) {
-    const { updateTaskProgress } = await import("@/lib/tasks");
-    updateTaskProgress(id, progress);
+  const { progress, status, updates } = body;
+
+  const { updateTaskProgress } = await import("@/lib/tasks");
+
+  if (updates && typeof updates === "object") {
+    updateTaskProgress(id, updates as TaskProgressUpdateInput);
+  } else if (progress !== undefined || status !== undefined) {
+    const legacyUpdates: TaskProgressUpdateInput = {};
+    if (typeof progress === "number") {
+      legacyUpdates.manualProgress = progress;
+    }
+    if (typeof status === "string") {
+      legacyUpdates.status = status as TaskProgressUpdateInput["status"];
+    }
+    updateTaskProgress(id, legacyUpdates);
   }
-  if (status !== undefined) {
-    const { updateTaskStatus } = await import("@/lib/tasks");
-    updateTaskStatus(id, status);
-  }
-  
+
   const updatedTask = getTaskById(id);
+  if (!updatedTask) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
   return NextResponse.json(updatedTask);
 }

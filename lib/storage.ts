@@ -2,6 +2,17 @@ import seedTasks from "@/data/tasks.json";
 
 const TASKS_STORAGE_KEY = "learning_tasks_v1";
 
+type StoredTaskStatus = "not_started" | "in_progress" | "completed";
+
+type StoredTaskProgressMeta = {
+  learnCompleted?: boolean;
+  practiceCompleted?: boolean;
+  masterCompleted?: boolean;
+  assignmentWorkflowProgress?: number;
+  assignmentSectionsCompleted?: string[];
+  manuallyAdjusted?: boolean;
+};
+
 export type StoredTask = {
   id: string;
   title: string;
@@ -16,10 +27,39 @@ export type StoredTask = {
   practice: any[];
   master: any[];
   assignments: any[];
+  progress?: number;
+  status?: StoredTaskStatus;
+  completedAt?: string;
+  startedAt?: string;
+  lastActivityAt?: string;
+  progressMeta?: StoredTaskProgressMeta;
   [key: string]: unknown;
 };
 
 let memoryTasks: StoredTask[] = [...(seedTasks as StoredTask[])];
+
+function normalizeStoredTask(task: StoredTask): StoredTask {
+  const progress =
+    typeof task.progress === "number"
+      ? Math.min(100, Math.max(0, Math.round(task.progress)))
+      : 0;
+  const status: StoredTaskStatus =
+    task.status === "completed"
+      ? "completed"
+      : task.status === "in_progress"
+        ? "in_progress"
+        : progress > 0
+          ? "in_progress"
+          : "not_started";
+
+  return {
+    ...task,
+    progress,
+    status,
+    lastActivityAt: task.lastActivityAt || new Date().toISOString(),
+    progressMeta: task.progressMeta || { assignmentSectionsCompleted: [] },
+  };
+}
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -27,29 +67,35 @@ function isBrowser() {
 
 function readStoredTasks(): StoredTask[] {
   if (!isBrowser()) {
-    return memoryTasks;
+    return memoryTasks.map(normalizeStoredTask);
   }
 
   const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
   if (!raw) {
-    window.localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(seedTasks));
-    return [...(seedTasks as StoredTask[])];
+    const normalizedSeeds = (seedTasks as StoredTask[]).map(
+      normalizeStoredTask,
+    );
+    window.localStorage.setItem(
+      TASKS_STORAGE_KEY,
+      JSON.stringify(normalizedSeeds),
+    );
+    return [...normalizedSeeds];
   }
 
   try {
     const parsed = JSON.parse(raw) as StoredTask[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeStoredTask) : [];
   } catch {
     return [];
   }
 }
 
 function writeStoredTasks(tasks: StoredTask[]): void {
-  memoryTasks = tasks;
+  memoryTasks = tasks.map(normalizeStoredTask);
   if (!isBrowser()) {
     return;
   }
-  window.localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  window.localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(memoryTasks));
 }
 
 export function getTasks(): StoredTask[] {
