@@ -13,7 +13,8 @@ if (!fs.existsSync(dataDir)) {
 export const db = new Database(dbPath);
 
 // ========== TASKS TABLE ==========
-db.prepare(`
+db.prepare(
+  `
   CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
     title TEXT,
@@ -36,29 +37,36 @@ db.prepare(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deadline TEXT                    -- ← Fixed: comma was missing before
   )
-`).run();
+`,
+).run();
 
 // ========== OTHER TABLES ==========
-db.prepare(`
+db.prepare(
+  `
   CREATE TABLE IF NOT EXISTS assignment_progress (
     id TEXT PRIMARY KEY,
     task_id TEXT NOT NULL UNIQUE,
     progress_data TEXT NOT NULL,
     updated_at INTEGER DEFAULT (unixepoch())
   )
-`).run();
+`,
+).run();
 
-db.prepare(`
+db.prepare(
+  `
   CREATE TABLE IF NOT EXISTS assignment_submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id TEXT UNIQUE NOT NULL,
     submission_data TEXT NOT NULL,
     submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
-`).run();
+`,
+).run();
 
 // ========== MIGRATIONS ==========
-const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
+const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as Array<{
+  name: string;
+}>;
 const columns = tableInfo.map((c) => c.name);
 
 if (!columns.includes("deadline")) {

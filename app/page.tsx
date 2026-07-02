@@ -62,7 +62,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 lg:p-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold">Good morning, Marc</h2>
+        <h2 className="text-2xl font-bold">Good morning, Mark</h2>
         <p className="text-muted-foreground">Here's your learning overview</p>
       </div>
 
@@ -130,7 +130,9 @@ export default function Dashboard() {
                         {task.deadline && (
                           <div className={`mt-3 text-sm flex items-center gap-1.5 ${isOverdue ? "text-red-600" : "text-muted-foreground"}`}>
                             <Calendar size={16} />
-                            {daysLeft !== null ? (
+                            {daysLeft === null || Number.isNaN(daysLeft) || Number.isNaN(new Date(task.deadline).getTime()) ? (
+                              <span>No Deadline</span>
+                            ) : (
                               isOverdue ? (
                                 <span>Overdue by {Math.abs(daysLeft)} days</span>
                               ) : daysLeft === 0 ? (
@@ -138,8 +140,6 @@ export default function Dashboard() {
                               ) : (
                                 <span>Due in {daysLeft} days</span>
                               )
-                            ) : (
-                              <span>Deadline: {new Date(task.deadline).toLocaleDateString()}</span>
                             )}
                           </div>
                         )}
@@ -160,7 +160,7 @@ export default function Dashboard() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <button
                 onClick={() => setShowCompleted(!showCompleted)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/50"
+                className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Trophy className="text-yellow-500" size={22} />
@@ -168,7 +168,28 @@ export default function Dashboard() {
                 </div>
                 {showCompleted ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </button>
-              {/* ... rest of completed section unchanged */}
+
+              {showCompleted && (
+                <div className="p-6 pt-2 space-y-3 max-h-[420px] overflow-auto">
+                  {completedTasks.map((task) => (
+                    <Link
+                      key={task.id}
+                      href={`/task/${task.id}`}
+                      className="block bg-secondary/50 hover:bg-secondary rounded-xl p-4 transition-all group"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-medium group-hover:text-accent transition-colors">
+                            {task.title}
+                          </h5>
+                          <p className="text-sm text-muted-foreground">{task.subject}</p>
+                        </div>
+                        <div className="text-green-600 font-semibold">100%</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

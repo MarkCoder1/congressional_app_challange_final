@@ -106,3 +106,37 @@ body {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
   }
 }
+
+/* Sidebar link styles */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: hsl(var(--muted-foreground));
+}
+
+.sidebar-link:hover {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+}
+
+.sidebar-link.active {
+  background-color: hsl(var(--accent) / 0.1);
+  color: hsl(var(--accent));
+  border-left: 3px solid hsl(var(--accent));
+}
+
+/* For collapsed state when justify-center is applied */
+.sidebar-link.justify-center {
+  justify-content: center;
+  padding: 0.625rem;
+}
+
+.sidebar-link.justify-center svg {
+  margin: 0;
+}

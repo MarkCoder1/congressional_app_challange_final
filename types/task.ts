@@ -151,8 +151,8 @@ export interface Task {
   visualData?: VisualData;
 
   // NEW: Deadline
-  deadlineDate?: string;       // Optional: "2026-06-15"
-  deadlineTime?: string;       // Optional: "23:59"
+  deadlineDate?: string; // Optional: "2026-06-15"
+  deadlineTime?: string; // Optional: "23:59"
 }
 
 export interface AnswerAnalysis {

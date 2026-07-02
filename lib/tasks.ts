@@ -130,7 +130,7 @@ export function createTask(task: Task) {
     JSON.stringify(task.progressMeta ?? {}),
     JSON.stringify(task.visualData ?? {}),
     JSON.stringify(task.assignmentContent ?? {}),
-    task.deadline || null          // ← Now correctly placed
+    task.deadline || null, // ← Now correctly placed
   );
 }
 
@@ -271,7 +271,9 @@ export function getAllTasks(): Task[] {
   return rows.map((row) => {
     const resources = safeJsonParse<Record<string, any>>(row.resources, {});
     const learningMaps = safeJsonParse(row.learningMaps, []);
-    const practice = normalizePracticeQuestions(safeJsonParse(row.practice, []));
+    const practice = normalizePracticeQuestions(
+      safeJsonParse(row.practice, []),
+    );
     const master = normalizeMasterQuestions(safeJsonParse(row.master, []));
     const assignments = safeJsonParse(row.assignments, []);
     const { deadline, learningContent } = extractExtendedFields(resources);

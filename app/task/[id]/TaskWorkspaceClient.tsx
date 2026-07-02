@@ -37,6 +37,7 @@ import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
 
+
 type TabType = "Learn" | "Practice" | "Master" | "Assignment";
 
 const tabIcons: Record<TabType, LucideIcon> = {
@@ -492,9 +493,7 @@ export default function TaskWorkspaceClient({
           </div>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">{taskData.description}</p>
-        <button className="btn-primary w-full flex items-center justify-center gap-2 mt-auto">
-          <Play size={18} /> Start Focus Mode
-        </button>
+        
       </div>
 
       {/* RIGHT PANEL */}

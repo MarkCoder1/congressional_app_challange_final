@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     stmt.run(
       crypto.randomUUID(),
       taskId,
-      
+
       JSON.stringify(progressData),
       Date.now(),
     );
