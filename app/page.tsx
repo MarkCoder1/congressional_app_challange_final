@@ -51,12 +51,12 @@ export default function Dashboard() {
     const diffTime = due.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
     return diffDays;
-  };
+  };``
 
   if (loading) return <div className="p-8 text-center">Loading dashboard...</div>;
 
   if (tasks.length === 0) {
-    return <EmptyState icon={<BookOpen size={32} />} title="No tasks yet" description="Create your first task" actionLabel="Create Task" actionHref="/create-task" />;
+    return <EmptyState  icon={<BookOpen size={32} />} title="No tasks yet" description="Create your first task" actionLabel="Create Task" actionHref="/create-task" />;
   }
 
   return (
