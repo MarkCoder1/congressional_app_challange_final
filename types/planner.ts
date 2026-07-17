@@ -41,10 +41,15 @@ export type PlannerTask = {
   reason?: string;
 };
 
+// /types/planner.ts (add these fields)
 export type TimelineItem = {
   taskId: string;
-  title: string; // 👈 added
-  startTime: string; // "09:00"
+  title: string;
+  subject: string;        // new
+  type: string;           // new – "lesson", "assignment", "practice", "review"
+  progress: number;       // new – 0-100
+  deadline?: string;      // new – ISO date
+  startTime: string;
   duration: number;
   priority: "high" | "medium" | "low";
   reason: string;

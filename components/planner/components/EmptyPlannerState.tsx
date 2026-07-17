@@ -1,6 +1,3 @@
-// /components/planner/components/EmptyPlannerState.tsx
-"use client";
-
 import { Sparkles } from "lucide-react";
 
 export function EmptyPlannerState() {

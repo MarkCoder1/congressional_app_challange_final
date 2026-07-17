@@ -42,7 +42,7 @@ export function TimelineCard({ item, index }: TimelineCardProps) {
                 <span className="text-xs text-muted-foreground">{item.duration}m</span>
               </div>
               <h4 className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate mt-1">
-                {item.title} {/* 👈 now shows the real task title */}
+                {item.title}
               </h4>
               <div className="mt-1 text-xs text-muted-foreground italic line-clamp-2">
                 {item.reason}

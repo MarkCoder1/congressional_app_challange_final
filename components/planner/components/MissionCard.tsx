@@ -5,8 +5,9 @@ import { TodayMission } from "@/types/planner";
 import { Target, Clock, TrendingUp, Play } from "lucide-react";
 import { motion } from "framer-motion";
 
+// /components/planner/components/MissionCard.tsx
 interface MissionCardProps {
-  mission: TodayMission;
+  mission: TodayMission & { urgentCount?: number; overdueCount?: number };
 }
 
 export function MissionCard({ mission }: MissionCardProps) {
