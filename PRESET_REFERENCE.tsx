@@ -437,20 +437,21 @@ function TaskPresetSelector({ subject }: { subject: Subject }) {
 }
 
 // Render preset
-function PresetDisplay({ presetId }: { presetId: string }) {
-  const preset = getPresetData(presetId);
-  
-  if (!preset) return <div>Preset not found</div>;
-  
-  // Type narrowing based on preset.type
-  if (preset.type === "timeline") {
-    return <TimelineRenderer preset={preset} />;
-  }
-  if (preset.type === "cards") {
-    return <CardsRenderer preset={preset} />;
-  }
-  // ... handle other types
-}
+// NOTE: This is example code. Actual renderers are in components/visuals/
+// function PresetDisplay({ presetId }: { presetId: string }) {
+//   const preset = getPresetData(presetId);
+//   
+//   if (!preset) return <div>Preset not found</div>;
+//   
+//   // Type narrowing based on preset.type
+//   if (preset.type === "timeline") {
+//     return <TimelineView preset={preset} />;
+//   }
+//   if (preset.type === "cards") {
+//     return <CardsView preset={preset} />;
+//   }
+//   // ... handle other types
+// }
 
 // ============================================================================
 // TASK STRUCTURE WITH LEARNING MAPS
@@ -483,12 +484,12 @@ function getCurrentFlow() {
 /**
  * Future: Replace with AI
  */
-async function getFutureFlow(taskId: string, presetId: string) {
-  // Instead of getPresetData, call AI:
-  const aiPreset = await generatePresetContent(taskId, presetId);
-  // Returns: Preset with AI-generated content
-  // Same structure, different data source
-}
+// async function getFutureFlow(taskId: string, presetId: string) {
+//   // Instead of getPresetData, call AI:
+//   // const aiPreset = await generatePresetContent(taskId, presetId);
+//   // Returns: Preset with AI-generated content
+//   // Same structure, different data source
+// }
 
 // ============================================================================
 // EXTENDING SYSTEM

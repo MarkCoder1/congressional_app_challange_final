@@ -106,9 +106,9 @@ export function createTask(task: Task) {
       (
         id, title, subject, description, type, resources, learningMaps, practice, master,
         assignments, progress, status, started_at, completed_at, last_activity_at,
-        progress_meta, visualData, assignmentContent, deadline
+        progress_meta, visualData, assignmentContent, deadline, difficulty, estimated_minutes
       )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -130,7 +130,9 @@ export function createTask(task: Task) {
     JSON.stringify(task.progressMeta ?? {}),
     JSON.stringify(task.visualData ?? {}),
     JSON.stringify(task.assignmentContent ?? {}),
-    task.deadline || null, // ← Now correctly placed
+    task.deadline || null,
+    task.difficulty || null,
+    task.estimatedMinutes ?? null,
   );
 }
 
@@ -173,6 +175,8 @@ export function getTaskById(id: string): Task | null {
     assignments,
     visualData,
     assignmentContent,
+    difficulty: (row.difficulty as Task["difficulty"]) ?? undefined,
+    estimatedMinutes: row.estimated_minutes ?? undefined,
   };
 }
 
@@ -304,6 +308,8 @@ export function getAllTasks(): Task[] {
       assignments,
       visualData,
       assignmentContent,
+      difficulty: (row.difficulty as Task["difficulty"]) ?? undefined,
+      estimatedMinutes: row.estimated_minutes ?? undefined,
     };
   });
 }

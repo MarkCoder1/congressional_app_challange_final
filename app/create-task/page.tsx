@@ -1,13 +1,23 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { TaskType } from "@/types/task";
+import type { TaskType, TaskDifficulty } from "@/types/task";
 import type { Subject } from "@/lib/types";
 
 const presetSubjects: Subject[] = [
   "Math", "History", "Science", "Physics", "Programming",
   "Biology", "Spanish", "English", "Literature", "Geography",
   "Chemistry", "Economics"
+];
+
+const ESTIMATED_TIME_OPTIONS = [
+  { label: "15 minutes", value: 15 },
+  { label: "30 minutes", value: 30 },
+  { label: "45 minutes", value: 45 },
+  { label: "60 minutes", value: 60 },
+  { label: "90 minutes", value: 90 },
+  { label: "120 minutes", value: 120 },
+  { label: "180+ minutes", value: 180 },
 ];
 
 export default function CreateTaskPage() {
@@ -21,6 +31,10 @@ export default function CreateTaskPage() {
   const [type, setType] = useState<TaskType>("lesson");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
+
+  // ── Phase 9.2.2: Task Intelligence Input ──
+  const [difficulty, setDifficulty] = useState<TaskDifficulty>("medium");
+  const [estimatedMinutes, setEstimatedMinutes] = useState<number>(30);
 
   const finalSubject = isCustom ? customSubject.trim() : subject;
 
@@ -39,7 +53,9 @@ export default function CreateTaskPage() {
         description,
         type,
         resources: { text: "", urls: [] },
-        deadline,                    // ← Add this
+        deadline,
+        difficulty,
+        estimatedMinutes,
       };
 
       const res = await fetch("/api/tasks/create", {
@@ -144,6 +160,48 @@ export default function CreateTaskPage() {
             className="border rounded-lg p-3 w-full h-28 resize-none focus:outline-none focus:ring-2 focus:ring-black"
             disabled={loading}
           />
+        </div>
+
+        {/* ── Phase 9.2.2: Difficulty Selector ── */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Difficulty</label>
+          <div className="flex gap-2">
+            {(["easy", "medium", "hard"] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setDifficulty(level)}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+                  difficulty === level
+                    ? "bg-black text-white ring-2 ring-black"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+                disabled={loading}
+              >
+                {level === "easy" ? "🟢 " : level === "medium" ? "🟡 " : "🔴 "}
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Phase 9.2.2: Estimated Time Selector ── */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Estimated Time
+          </label>
+          <select
+            value={estimatedMinutes}
+            onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
+            className="border rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-black"
+            disabled={loading}
+          >
+            {ESTIMATED_TIME_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Deadline */}

@@ -145,7 +145,7 @@ export function calculateTaskProgress(
         ? [updates.assignmentStageCompleted]
         : []),
       ...(updates.workflowAdvancedTo ? [updates.workflowAdvancedTo] : []),
-      ...(updates.submissionValidated ? ["submission"] : []),
+      ...(updates.submissionValidated ? (["submission"] as AssignmentWorkflowStage[]) : []),
     ]);
 
     if (stages.length > 0) {

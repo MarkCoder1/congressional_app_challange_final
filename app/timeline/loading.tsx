@@ -1,4 +1,4 @@
-import { TimelineSkeleton } from "@/components/skeletons/TimelineSkeleton";
+import { TimelineSkeleton } from "@/components/timeline/TimelineSkeleton";
 
 export default function Loading() {
   return (

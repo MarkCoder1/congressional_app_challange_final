@@ -18,4 +18,6 @@ export type TaskRow = {
   progress_meta: string | null;
   visualData: string;
   assignmentContent: string;
+  difficulty: string | null;
+  estimated_minutes: number | null;
 };

@@ -3,6 +3,7 @@ import { VisualData } from "./visuals";
 
 export type TaskType = "lesson" | "assignment";
 export type TaskStatus = "not_started" | "in_progress" | "completed";
+export type TaskDifficulty = "easy" | "medium" | "hard";
 export type LessonProgressEvent =
   | "learn_entered"
   | "learn_viewed"
@@ -153,6 +154,10 @@ export interface Task {
   // NEW: Deadline
   deadlineDate?: string; // Optional: "2026-06-15"
   deadlineTime?: string; // Optional: "23:59"
+
+  // ── Phase 9.2.2: Task Intelligence Input ──
+  difficulty?: TaskDifficulty;
+  estimatedMinutes?: number;
 }
 
 export interface AnswerAnalysis {

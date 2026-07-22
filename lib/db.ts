@@ -74,6 +74,24 @@ if (!columns.includes("deadline")) {
   db.prepare("ALTER TABLE tasks ADD COLUMN deadline TEXT").run();
 }
 
-console.log("✅ Database initialized with deadline support");
+if (!columns.includes("difficulty")) {
+  try {
+    console.log("🔧 Adding difficulty column...");
+    db.prepare("ALTER TABLE tasks ADD COLUMN difficulty TEXT DEFAULT 'medium'").run();
+  } catch {
+    console.log("⚠️ difficulty column already exists (race condition)");
+  }
+}
+
+if (!columns.includes("estimated_minutes")) {
+  try {
+    console.log("🔧 Adding estimated_minutes column...");
+    db.prepare("ALTER TABLE tasks ADD COLUMN estimated_minutes INTEGER").run();
+  } catch {
+    console.log("⚠️ estimated_minutes column already exists (race condition)");
+  }
+}
+
+console.log("✅ Database initialized with deadline, difficulty, and estimated_minutes support");
 
 export default db;

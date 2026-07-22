@@ -426,6 +426,8 @@ export async function POST(request: NextRequest) {
       description: body.description,
       type: (body.type === "assignment" ? "assignment" : "lesson") as TaskType,
       deadline: body.deadline || null,
+      difficulty: body.difficulty || "medium",
+      estimatedMinutes: body.estimatedMinutes ?? undefined,
       progress: 0,
       status: "not_started",
       startedAt: undefined,
