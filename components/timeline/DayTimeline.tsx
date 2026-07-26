@@ -29,14 +29,24 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
   // Sort blocks by date (they only have date, not time)
   const sortedBlocks = [...filteredBlocks].sort((a, b) => a.date.localeCompare(b.date));
 
-  // Calculate positions to avoid overlap - stack blocks vertically
-  const blockPositions = sortedBlocks.map((block, idx) => {
-    // Each block gets its own row, starting at 8 AM
-    const startHour = 8;
-    const topPosition = idx * 100; // 100px per block row
-    const blockHeight = Math.max(80, (block.duration / 60) * 80);
-    return { topPosition, blockHeight };
-  });
+  // Calculate cumulative positions to prevent overlap.
+  // Each block's height is proportional to its duration (minutes).
+  // Blocks are stacked vertically with a small gap between them.
+  const BLOCK_GAP = 16; // px gap between blocks
+  const MIN_HEIGHT = 80; // minimum card height in px
+  const PX_PER_HOUR = 80; // pixels per hour of study time
+
+  const blockPositions: { topPosition: number; blockHeight: number }[] = [];
+  let cumulativeTop = 0;
+
+  for (const block of sortedBlocks) {
+    const blockHeight = Math.max(MIN_HEIGHT, (block.duration / 60) * PX_PER_HOUR);
+    blockPositions.push({ topPosition: cumulativeTop, blockHeight });
+    cumulativeTop += blockHeight + BLOCK_GAP;
+  }
+
+  // Total height needed for the container
+  const containerHeight = cumulativeTop > 0 ? cumulativeTop : 384; // 384 = 16 * 24 (default empty height)
 
   return (
     <motion.div
@@ -96,8 +106,11 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
                 return null;
               })()}
 
-              {/* Task Blocks Container - Stacked vertically to avoid overlap */}
-              <div className="relative">
+              {/* Task Blocks Container - Stacked vertically with cumulative positioning */}
+              <div
+                className="relative overflow-hidden"
+                style={{ height: `${containerHeight}px` }}
+              >
                 {sortedBlocks.length === 0 ? (
                   <div className="flex items-center justify-center h-96 text-muted-foreground">
                     <p>No study sessions scheduled for this day</p>

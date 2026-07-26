@@ -22,6 +22,7 @@ db.prepare(
     description TEXT,
     type TEXT,
     resources TEXT,
+    learningContent TEXT,
     learningMaps TEXT,
     practice TEXT,
     master TEXT,
@@ -35,7 +36,7 @@ db.prepare(
     visualData TEXT DEFAULT '{}',
     assignmentContent TEXT DEFAULT '{}',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deadline TEXT                    -- ← Fixed: comma was missing before
+    deadline TEXT
   )
 `,
 ).run();
@@ -92,6 +93,15 @@ if (!columns.includes("estimated_minutes")) {
   }
 }
 
-console.log("✅ Database initialized with deadline, difficulty, and estimated_minutes support");
+if (!columns.includes("learningContent")) {
+  try {
+    console.log("🔧 Adding learningContent column...");
+    db.prepare("ALTER TABLE tasks ADD COLUMN learningContent TEXT DEFAULT '{}'").run();
+  } catch {
+    console.log("⚠️ learningContent column already exists (race condition)");
+  }
+}
+
+console.log("✅ Database initialized with deadline, difficulty, estimated_minutes, and learningContent support");
 
 export default db;

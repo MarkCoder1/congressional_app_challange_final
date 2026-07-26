@@ -1,15 +1,17 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Clock, Target, Calendar, Gauge, BookOpen } from "lucide-react";
+import { X, Clock, Target, Calendar, Gauge, BookOpen, Timer } from "lucide-react";
 import type { StudyBlockResult } from "@/features/planner/types";
 
 interface TimelineSidebarProps {
   block: StudyBlockResult | null;
   onClose: () => void;
+  /** Total estimated minutes for the parent task (if known). */
+  totalEstimatedMinutes?: number | null;
 }
 
-export function TimelineSidebar({ block, onClose }: TimelineSidebarProps) {
+export function TimelineSidebar({ block, onClose, totalEstimatedMinutes }: TimelineSidebarProps) {
   return (
     <AnimatePresence>
       {block && (
@@ -53,9 +55,18 @@ export function TimelineSidebar({ block, onClose }: TimelineSidebarProps) {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<Clock size={16} />} label="Duration" value={`${block.duration} min`} />
-                <StatCard icon={<Target size={16} />} label="Priority" value={block.priorityScore?.toFixed(1) ?? "N/A"} />
+                <StatCard icon={<Clock size={16} />} label="Session Duration" value={`${block.duration} min`} />
+                <PriorityCard block={block} />
               </div>
+
+              {/* Total Estimated Time (if different from session duration) */}
+              {totalEstimatedMinutes != null && totalEstimatedMinutes > 0 && totalEstimatedMinutes !== block.duration && (
+                <div className="flex items-center gap-2 text-sm bg-secondary/30 rounded-xl p-3">
+                  <Timer size={16} className="text-muted-foreground" />
+                  <span className="text-muted-foreground">Total estimated time:</span>
+                  <span className="font-semibold">{totalEstimatedMinutes} minutes</span>
+                </div>
+              )}
 
               {/* Reason */}
               <div className="bg-secondary/50 rounded-xl p-4">
@@ -109,4 +120,56 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
       <p className="text-sm font-bold">{value}</p>
     </div>
   );
+}
+
+function PriorityCard({ block }: { block: StudyBlockResult }) {
+  const { label, score } = getPriorityDisplay(block);
+  return (
+    <div className="bg-secondary/50 rounded-xl p-3">
+      <div className="flex items-center gap-2 mb-1">
+        <Target size={16} />
+        <p className="text-xs text-muted-foreground">Priority</p>
+      </div>
+      <p className="text-sm font-bold">{label}</p>
+      {score != null && (
+        <p className="text-xs text-muted-foreground mt-1">Score: {score}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Format priority for display.
+ *
+ * Converts internal priorityScore (0-100) to human-readable labels:
+ *   90-100 → Critical
+ *   70-89  → High
+ *   40-69  → Medium
+ *   0-39   → Low
+ *
+ * Falls back to priorityLevel if no score is available.
+ */
+function getPriorityDisplay(block: StudyBlockResult): { label: string; score: string | null } {
+  const score = block.priorityScore;
+
+  if (score !== undefined && score !== null) {
+    const rounded = Math.round(score);
+    let label: string;
+    if (rounded >= 90) label = "Critical";
+    else if (rounded >= 70) label = "High";
+    else if (rounded >= 40) label = "Medium";
+    else label = "Low";
+
+    return { label: `${label} (Score ${rounded})`, score: `${rounded}/100` };
+  }
+
+  if (block.priorityLevel) {
+    return { label: capitalize(block.priorityLevel), score: null };
+  }
+
+  return { label: "N/A", score: null };
+}
+
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

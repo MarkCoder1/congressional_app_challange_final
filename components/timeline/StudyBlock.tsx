@@ -23,32 +23,35 @@ export function StudyBlock({ block, onClick }: StudyBlockProps) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      whileHover={{ scale: 1.02, y: -3 }}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={`${config.color} border rounded-xl p-4 cursor-pointer transition-all shadow-sm hover:shadow-lg`}
+      className={`${config.color} border rounded-xl p-3 cursor-pointer transition-all shadow-sm overflow-hidden h-full flex flex-col`}
     >
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-2xl">{config.icon}</span>
-        <span className={`text-xs font-bold px-2 py-1 rounded-md ${config.badge} capitalize`}>
+      <div className="flex items-start justify-between mb-1.5 flex-shrink-0">
+        <span className="text-lg leading-none">{config.icon}</span>
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${config.badge} capitalize leading-tight`}>
           {block.type}
         </span>
       </div>
 
-      <h4 className="font-bold text-sm mb-1 line-clamp-2">{block.title}</h4>
-      <p className="text-xs opacity-75 mb-3">{block.subject}</p>
+      <h4 className="font-bold text-xs leading-tight mb-1 line-clamp-2 flex-1 overflow-hidden text-ellipsis">
+        {block.title}
+      </h4>
+      <p className="text-[10px] opacity-75 mb-1.5 line-clamp-1 overflow-hidden text-ellipsis flex-shrink-0">
+        {block.subject}
+      </p>
 
-      <div className="space-y-1.5 text-xs">
-        <div className="flex items-center gap-1.5">
+      <div className="space-y-0.5 text-[10px] flex-shrink-0">
+        <div className="flex items-center gap-1">
           <span className="font-semibold">⏱️ {block.duration} min</span>
         </div>
-        <p className="opacity-75 line-clamp-2 leading-relaxed">{block.reason}</p>
+        <p className="opacity-75 line-clamp-1 leading-relaxed overflow-hidden text-ellipsis">{block.reason}</p>
       </div>
 
       <Link
         href={`/task/${block.taskId}`}
         onClick={(e) => e.stopPropagation()}
-        className="mt-3 block w-full text-center text-xs font-semibold bg-white/60 hover:bg-white/90 rounded-lg py-2 transition-colors"
+        className="mt-1.5 block w-full text-center text-[10px] font-semibold bg-white/60 hover:bg-white/90 rounded-lg py-1 transition-colors flex-shrink-0"
       >
         Open Task
       </Link>

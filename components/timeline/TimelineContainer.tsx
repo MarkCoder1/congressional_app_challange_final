@@ -26,6 +26,7 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
   const [view, setView] = useState<TimelineView>("today");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedBlock, setSelectedBlock] = useState<StudyBlockResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Single filtering pipeline - derive all state from blocks (which are already filtered by planner)
   const activeTasks = useMemo(() => {
@@ -40,22 +41,33 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
     return formatPlannerDateKey(new Date());
   }, []);
 
+  // Search filter — filters visible study blocks by task title and subject
+  const filteredBlocks = useMemo(() => {
+    if (!searchQuery.trim()) return blocks;
+    const query = searchQuery.toLowerCase();
+    return blocks.filter(
+      (block) =>
+        block.title.toLowerCase().includes(query) ||
+        block.subject.toLowerCase().includes(query),
+    );
+  }, [blocks, searchQuery]);
+
   // Today's blocks - already filtered by planner to exclude completed tasks
   const todayBlocks = useMemo(() => {
-    return blocks.filter((block) => block.date === todayStr);
-  }, [blocks, todayStr]);
+    return filteredBlocks.filter((block) => block.date === todayStr);
+  }, [filteredBlocks, todayStr]);
 
   // Selected day blocks - for day view and calendar selection
   const selectedDayBlocks = useMemo(() => {
-    return blocks.filter((block) => block.date === selectedDateStr);
-  }, [blocks, selectedDateStr]);
+    return filteredBlocks.filter((block) => block.date === selectedDateStr);
+  }, [filteredBlocks, selectedDateStr]);
 
   // Upcoming blocks (future dates only)
   const upcomingBlocks = useMemo(() => {
-    return blocks
+    return filteredBlocks
       .filter((block) => block.date > todayStr)
       .sort((a, b) => a.date.localeCompare(b.date));
-  }, [blocks, todayStr]);
+  }, [filteredBlocks, todayStr]);
 
   // Today's task stats (from tasks, not blocks)
   const todayTaskStats = useMemo(() => {
@@ -97,6 +109,8 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
             onViewChange={setView}
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </div>
       </div>
@@ -108,7 +122,7 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
           <TimelineLeftSidebar
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
-            blocks={blocks}
+            blocks={filteredBlocks}
             upcomingBlocks={upcomingBlocks}
             tasks={tasks}
           />
@@ -136,7 +150,7 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
             {view === "week" && (
               <WeekTimeline
                 key="week"
-                blocks={blocks}
+                blocks={filteredBlocks}
                 selectedDate={selectedDate}
                 onBlockClick={setSelectedBlock}
               />
@@ -172,6 +186,11 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
         <TimelineSidebar
           block={selectedBlock}
           onClose={() => setSelectedBlock(null)}
+          totalEstimatedMinutes={
+            selectedBlock
+              ? tasks.find((t) => t.id === selectedBlock.taskId)?.estimatedMinutes ?? null
+              : null
+          }
         />
       </div>
     </div>

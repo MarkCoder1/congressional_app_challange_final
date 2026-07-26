@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
+  Sparkles,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Task } from "@/types/task";
@@ -23,6 +24,9 @@ type SectionState = {
   tasks: boolean;
   assignments: boolean;
 };
+
+// Demo mode flag - in real app this would come from config
+const IS_DEMO_MODE = true;
 
 const SIDEBAR_STATE_KEY = "sidebar_sections_state";
 const SIDEBAR_EXPANDED_KEY = "sidebar_expanded";
@@ -365,9 +369,17 @@ export function Sidebar() {
           {/* Footer */}
           <div className="px-4 py-3 border-t border-border">
             {isExpanded ? (
-              <p className="text-xs text-muted-foreground text-center font-medium">
-                © 2026 StudyFlow
-              </p>
+              <div className="space-y-2">
+                {IS_DEMO_MODE && (
+                  <div className="flex items-center justify-center gap-1.5 px-2 py-1 bg-accent/10 border border-accent/20 rounded-full">
+                    <Sparkles size={10} className="text-accent" />
+                    <span className="text-[10px] font-medium text-accent">Demo Mode</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground text-center font-medium">
+                  © 2026 StudyFlow
+                </p>
+              </div>
             ) : (
               <div className="w-full h-px bg-border" />
             )}

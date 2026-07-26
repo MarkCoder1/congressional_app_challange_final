@@ -100,6 +100,8 @@ export function buildPlannerState(
     duration: block.duration,
     date: block.date,
     reason: block.reason,
+    priorityScore: block.priorityScore,
+    priorityLevel: block.priorityLevel,
   }));
 
   return {

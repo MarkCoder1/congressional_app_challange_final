@@ -3,7 +3,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Play,
   BookOpen,
   Zap,
   Trophy,
@@ -18,6 +17,9 @@ import {
   Brain,
   FileText,
   Eye,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PracticeMode } from "@/components/practice-mode";
@@ -31,12 +33,21 @@ import { Subject } from "@/lib/types";
 import { Task, AssignmentContent } from "@/types/task";
 import { TaskProgressUpdateInput } from "@/lib/progress/taskProgressEngine";
 import { updateTaskProgress } from "@/lib/progress/updateTaskProgress";
-// NEW visual renderer (for AI-generated visuals) – expects only `data`
+import { 
+  generateLearningStats, 
+  generateUnderstandingFeedback,
+  generateLearningReport,
+  detectWeakAreas 
+} from "@/lib/mockLearningData";
+import type { LearningStats, UnderstandingFeedback, LearningReport } from "@/lib/mockLearningData";
 import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer";
-// OLD visual renderer (for legacy learningMaps) – expects `type` and `data`
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
 
+// Task workspace components
+import { LearningStatusCard } from "@/components/task-workspace/LearningStatusCard";
+import { CompletionCelebration } from "@/components/task-workspace/CompletionCelebration";
+import type { LearningStage, StageStatus, LessonProgressState, NextAction } from "@/components/task-workspace/types";
 
 type TabType = "Learn" | "Practice" | "Master" | "Assignment";
 
@@ -45,6 +56,13 @@ const tabIcons: Record<TabType, LucideIcon> = {
   Practice: Zap,
   Master: Trophy,
   Assignment: FileText,
+};
+
+const tabDescriptions: Record<TabType, string> = {
+  Learn: "Understand the concept",
+  Practice: "Apply your knowledge",
+  Master: "Check your understanding",
+  Assignment: "Complete your work",
 };
 
 interface TaskWorkspaceClientProps {
@@ -65,6 +83,39 @@ const statusPillClassMap: Record<Task["status"], string> = {
   completed: "bg-green-100 text-green-700",
 };
 
+function CollapsibleSection({
+  title,
+  icon,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary/50 transition-colors"
+      >
+        <span className="flex items-center gap-2">{icon} {title}</span>
+        <ChevronDown
+          size={14}
+          className={`text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function TaskWorkspaceClient({
   initialTask,
   assignment,
@@ -75,74 +126,34 @@ export default function TaskWorkspaceClient({
     hasAssignment ? "Assignment" : "Learn",
   );
   const [selectedPresetId, setSelectedPresetId] = useState("");
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [learningReport, setLearningReport] = useState<LearningReport | null>(null);
   const lessonStartSentRef = useRef(!!initialTask.startedAt);
   const learnViewSentRef = useRef(!!initialTask.progressMeta?.learnCompleted);
 
-  useEffect(() => {
-    console.log("[TaskWorkspaceClient] mounted", {
-      taskId: initialTask.id,
-      title: initialTask.title,
-      subject: initialTask.subject,
-      hasAssignment,
-      hasVisualData: !!initialTask.visualData,
-      visualType: initialTask.visualData?.type,
-    });
-  }, [hasAssignment, initialTask]);
+  // Dev mode hidden state (double-click title to reveal)
+  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
-    console.log("[TaskWorkspaceClient] task state changed", {
-      taskId: task.id,
-      title: task.title,
-      progress: task.progress,
-      hasVisualData: !!task.visualData,
-      visualType: task.visualData?.type,
-      learningMapCount: task.learningMaps?.length ?? 0,
-      practiceCount: task.practice?.length ?? 0,
-      masterCount: task.master?.length ?? 0,
-    });
-
-    lessonStartSentRef.current = !!task.startedAt;
-    learnViewSentRef.current = !!task.progressMeta?.learnCompleted;
+    if (task.status === "completed" && task.progress >= 100) {
+      setShowCompletion(true);
+    }
   }, [task]);
 
-  useEffect(() => {
-    console.log("[TaskWorkspaceClient] active tab changed", {
-      taskId: task.id,
-      activeTab,
-      hasAssignment,
-    });
-  }, [activeTab, hasAssignment, task.id]);
-
   const refreshTask = useCallback(async () => {
-    console.log("[TaskWorkspaceClient] refreshing task from API", { taskId: task.id });
     const res = await fetch(`/api/tasks/${task.id}`);
     if (res.ok) {
       const updated = await res.json();
-      console.log("[TaskWorkspaceClient] task refresh completed", {
-        taskId: task.id,
-        status: res.status,
-        hasVisualData: !!updated?.visualData,
-        visualType: updated?.visualData?.type,
-      });
       setTask(updated);
-    } else {
-      console.warn("[TaskWorkspaceClient] task refresh failed", {
-        taskId: task.id,
-        status: res.status,
-      });
     }
   }, [task.id]);
 
-  const applyProgressUpdate = useCallback(async (updates: TaskProgressUpdateInput) => {
+  const applyProgressUpdate = useCallback(async (updates: any) => {
     try {
       await updateTaskProgress(task.id, updates);
       await refreshTask();
     } catch (error) {
-      console.error("[TaskWorkspaceClient] failed to update task progress", {
-        taskId: task.id,
-        updates,
-        error,
-      });
+      console.error("[TaskWorkspaceClient] failed to update task progress", { error });
     }
   }, [refreshTask, task.id]);
 
@@ -150,7 +161,6 @@ export default function TaskWorkspaceClient({
     if (task.type !== "lesson") return;
     if (activeTab !== "Learn") return;
     if (task.startedAt || lessonStartSentRef.current) return;
-
     lessonStartSentRef.current = true;
     applyProgressUpdate({ lessonEvent: "learn_entered" });
   }, [activeTab, applyProgressUpdate, task.startedAt, task.type]);
@@ -159,7 +169,6 @@ export default function TaskWorkspaceClient({
     if (task.type !== "lesson") return;
     if (activeTab !== "Learn") return;
     if (task.progressMeta?.learnCompleted || learnViewSentRef.current) return;
-
     learnViewSentRef.current = true;
     applyProgressUpdate({ lessonEvent: "learn_viewed" });
   }, [activeTab, applyProgressUpdate, task.progressMeta?.learnCompleted, task.type]);
@@ -167,60 +176,121 @@ export default function TaskWorkspaceClient({
   const handleManualProgressAction = async (
     action: "increase" | "decrease" | "complete" | "reset",
   ) => {
-    if (action === "increase") {
-      await applyProgressUpdate({ manualDelta: 10 });
-      return;
-    }
-
-    if (action === "decrease") {
-      await applyProgressUpdate({ manualDelta: -10 });
-      return;
-    }
-
-    if (action === "complete") {
-      await applyProgressUpdate({ markCompleted: true });
-      return;
-    }
-
+    if (action === "increase") { await applyProgressUpdate({ manualDelta: 10 }); return; }
+    if (action === "decrease") { await applyProgressUpdate({ manualDelta: -10 }); return; }
+    if (action === "complete") { await applyProgressUpdate({ markCompleted: true }); return; }
     await applyProgressUpdate({ reset: true });
   };
 
-  const handlePracticeComplete = async (result: { score: number; weakAreas: string[] }) => {
-    console.log("[TaskWorkspaceClient] practice completed", {
-      taskId: task.id,
-      score: result.score,
-      weakAreas: result.weakAreas,
-    });
-    await applyProgressUpdate({
-      lessonEvent: "practice_completed",
-      lessonScore: result.score,
+  const handlePracticeComplete = async (result: { 
+    score: number; 
+    weakAreas: string[];
+    stats?: ReturnType<typeof generateLearningStats>;
+    feedback?: ReturnType<typeof generateUnderstandingFeedback>;
+  }) => {
+    // Generate learning report if we have stats
+    if (result.stats && result.feedback) {
+      const report = generateLearningReport(
+        result.stats,
+        result.weakAreas,
+        taskData.subject
+      );
+      setLearningReport(report);
+    }
+    
+    await applyProgressUpdate({ 
+      lessonEvent: "practice_completed", 
+      lessonScore: result.score 
     });
   };
 
   const handleMasterComplete = async (result: { score: number; passed: boolean; weakAreas: string[] }) => {
-    console.log("[TaskWorkspaceClient] master completed", {
-      taskId: task.id,
-      score: result.score,
-      passed: result.passed,
-      weakAreas: result.weakAreas,
-    });
     if (result.passed) {
-      console.log("[TaskWorkspaceClient] master passed, marking task complete", {
-        taskId: task.id,
-      });
-      await applyProgressUpdate({
-        lessonEvent: "master_completed",
-      });
+      await applyProgressUpdate({ lessonEvent: "master_completed" });
     } else {
-      await applyProgressUpdate({
-        lessonEvent: "master_failed",
-        lessonScore: result.score,
-      });
+      await applyProgressUpdate({ lessonEvent: "master_failed", lessonScore: result.score });
       alert("Score below 80%. Please review the material and retry.");
     }
   };
 
-  // Guard: only if task is completely missing
+  // ---- Derived state ----
+  const progressMeta = task.progressMeta ?? {};
+  const learnCompleted = !!progressMeta.learnCompleted;
+  const practiceCompleted = !!progressMeta.practiceCompleted;
+  const masterCompleted = !!progressMeta.masterCompleted;
+  const isCompleted = task.status === "completed" || task.progress >= 100;
+
+  const currentStage = (() => {
+    if (isCompleted) return "Completed";
+    if (!learnCompleted) return "Learn Mode";
+    if (!practiceCompleted) return "Practice Mode";
+    if (!masterCompleted) return "Master Mode";
+    return "Completed";
+  })();
+
+  const lessonProgressState: LessonProgressState = {
+    learnCompleted, practiceCompleted, masterCompleted,
+    progress: task.progress ?? 0,
+  };
+
+  const buildStageStatuses = (): StageStatus[] => {
+    const stages: LearningStage[] = ["Learn", "Practice", "Master"];
+    if (hasAssignment) stages.push("Assignment");
+    return stages.map((stage) => {
+      let completed = false, current = false, locked = false;
+      switch (stage) {
+        case "Learn":
+          completed = learnCompleted;
+          current = activeTab === "Learn" && !learnCompleted;
+          locked = false;
+          break;
+        case "Practice":
+          completed = practiceCompleted;
+          current = activeTab === "Practice" && !practiceCompleted;
+          locked = !learnCompleted;
+          break;
+        case "Master":
+          completed = masterCompleted;
+          current = activeTab === "Master" && !masterCompleted;
+          locked = !practiceCompleted;
+          break;
+        case "Assignment":
+          completed = isCompleted;
+          current = activeTab === "Assignment" && !isCompleted;
+          locked = !masterCompleted && !isCompleted;
+          break;
+      }
+      return { stage, completed, current, locked };
+    });
+  };
+
+  const stageStatuses = buildStageStatuses();
+
+  const completedActivities: string[] = [];
+  const remainingActivities: string[] = [];
+  if (learnCompleted) completedActivities.push("✓ Learn");
+  else remainingActivities.push("Learn Mode");
+  if (practiceCompleted) completedActivities.push("✓ Practice Questions");
+  else remainingActivities.push("Practice Questions");
+  if (masterCompleted) completedActivities.push("✓ Master Test");
+  else remainingActivities.push("Master Test");
+  if (hasAssignment && isCompleted) completedActivities.push("✓ Assignment");
+  else if (hasAssignment) remainingActivities.push("Assignment");
+
+  const getNextAction = (): NextAction | null => {
+    if (isCompleted) return null;
+    if (!learnCompleted) return { label: "Start by learning the concept", action: "Start Learning", targetTab: "Learn" };
+    if (!practiceCompleted) return { label: "Complete Practice Questions", action: "Continue Practice", targetTab: "Practice" };
+    if (!masterCompleted) return { label: "Take Master Test", action: "Start Test", targetTab: "Master" };
+    if (hasAssignment && !isCompleted) return { label: "Complete your assignment", action: "Open Assignment", targetTab: "Assignment" };
+    return null;
+  };
+
+  const nextAction = getNextAction();
+
+  const handleStageClick = (stage: LearningStage) => setActiveTab(stage as TabType);
+
+  // Guard: no task
   if (!task) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -237,115 +307,38 @@ export default function TaskWorkspaceClient({
     );
   }
 
-  // Show only Assignment UI if this is an assignment task (no Learn/Practice/Master)
+  // Assignment-only view
   if (hasAssignment && assignment) {
-    // Override tabs to show only Assignment
-    const assignmentOnlyTabs = ["Assignment"] as const;
-    const isAssignmentTab = activeTab === "Assignment";
-
     return (
-      <div className="h-full flex flex-col lg:flex-row bg-background">
-        {/* LEFT PANEL - Task Overview */}
-        <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card p-6 flex flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold mb-3 text-foreground">{task.title}</h1>
-            <div className="inline-block mb-4">
-              <span className="px-3 py-1.5 bg-accent/10 text-accent font-semibold text-sm rounded-lg">
-                {task.subject}
-              </span>
-            </div>
-            <div className="mb-4">
-              <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="border-b border-border bg-card px-4 sm:px-6 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-bold text-foreground">{task.title}</h1>
+              <span className="px-2.5 py-1 bg-accent/10 text-accent font-semibold text-xs rounded-lg">{task.subject}</span>
+              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
                 {statusLabelMap[task.status]}
               </span>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar size={16} />
-                <span>Due: { }</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock size={16} />
-                <span>Estimated: 2 hours</span>
-
-              </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Calendar size={12} /> Due: —</span>
+              <span className="flex items-center gap-1"><Clock size={12} /> 2h</span>
             </div>
           </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">{task.progress}% Complete</span>
-              <span className="text-sm font-semibold text-accent">{task.progress}%</span>
-            </div>
-            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${task.progress}%` }} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {task.completedAt
-                ? `Completed ${new Date(task.completedAt).toLocaleDateString()}`
-                : task.startedAt
-                  ? `Started ${new Date(task.startedAt).toLocaleDateString()}`
-                  : "Not started yet"}
-            </p>
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
-                +10%
-              </button>
-              <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
-                -10%
-              </button>
-              <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1.5 rounded-md bg-green-100 text-green-700 hover:opacity-90 transition-opacity">
-                Mark Complete
-              </button>
-              <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1.5 rounded-md bg-red-100 text-red-700 hover:opacity-90 transition-opacity">
-                Reset
-              </button>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>
-          <button className="btn-primary w-full flex items-center justify-center gap-2 mt-auto">
-            <Play size={18} /> Start Assignment
-          </button>
         </div>
-
-        {/* RIGHT PANEL - Assignment Workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-border bg-card">
-            <div className="flex overflow-x-auto p-6 gap-2">
-              {assignmentOnlyTabs.map((tab) => {
-                const IconComponent = tabIcons[tab];
-                const isActive = activeTab === tab;
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${isActive
-                      ? "active bg-accent text-white shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                  >
-                    <IconComponent size={18} />
-                    {tab}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto p-6">
-            {isAssignmentTab && (
-              <AssignmentWorkspace
-                assignment={assignment}
-                taskId={task.id}
-                taskProgress={task.progress}
-                onTaskRefresh={refreshTask}
-              />
-            )}
-          </div>
+        <div className="flex-1 overflow-auto">
+          <AssignmentWorkspace
+            assignment={assignment}
+            taskId={task.id}
+            taskProgress={task.progress}
+            onTaskRefresh={refreshTask}
+          />
         </div>
       </div>
     );
   }
 
-  // ----- LESSON (original) UI -----
+  // ----- LESSON UI -----
   const taskData = {
     id: task.id,
     title: task.title,
@@ -376,317 +369,314 @@ export default function TaskWorkspaceClient({
     steps: [],
   };
 
-  console.log("TASK DEADLINE VALUE:", task.deadline);
+  // Completion celebration
+  if (showCompletion) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <CompletionCelebration
+          progress={task.progress}
+          timeSpent={task.startedAt && task.completedAt
+            ? `${Math.round((new Date(task.completedAt).getTime() - new Date(task.startedAt).getTime()) / 3600000)} hours`
+            : "~2 hours"
+          }
+          accuracy={learningReport?.score || 85}
+          completedSections={completedActivities}
+          onBackToDashboard={() => window.location.href = "/"}
+          learningReport={learningReport || undefined}
+        />
+      </div>
+    );
+  }
 
-  // Only show Learn/Practice/Master tabs (no Assignment)
-  const lessonTabs = ["Learn", "Practice", "Master"] as const;
-
-  const handleTabChange = (tab: TabType) => {
-    console.log("[TaskWorkspaceClient] tab change requested", {
-      taskId: task.id,
-      from: activeTab,
-      to: tab,
-    });
-    setActiveTab(tab);
-  };
-
-  console.log("TaskWorkspaceClient visualData:", task.visualData);
-  console.log("[TaskWorkspaceClient] render summary", {
-    taskId: task.id,
-    activeTab,
-    hasVisualData: !!task.visualData,
-    visualType: task.visualData?.type,
-    hasLearningMaps,
-    selectedPresetId,
-    selectedMapId: selectedMap?.presetId,
-  });
+  const lessonTabs: TabType[] = ["Learn", "Practice", "Master"];
 
   return (
-    <div className="h-full flex flex-col lg:flex-row bg-background">
-      {/* LEFT PANEL - unchanged */}
-      <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card p-6 flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-3 text-foreground">{taskData.title}</h1>
-          <div className="inline-block mb-4">
-            <span className="px-3 py-1.5 bg-accent/10 text-accent font-semibold text-sm rounded-lg">
-              {taskData.subject}
-            </span>
-          </div>
-          <div className="mb-4">
-            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
-              {statusLabelMap[task.status]}
-            </span>
-          </div>
-          <div className="space-y-2 text-sm">
-            {/* Deadline Display */}
-            {/* Deadline Display - Safe Version */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar size={16} />
-              {task.deadline && task.deadline !== "TBD" && task.deadline !== "null" ? (
-                (() => {
-                  const dueDate = new Date(task.deadline);
-                  const isValid = !isNaN(dueDate.getTime());
-                  const isOverdue = isValid && dueDate < new Date();
-
-                  return (
-                    <span>
-                      Due{" "}
-                      <span className={`font-medium ${isOverdue ? "text-red-600" : "text-foreground"}`}>
-                        {isValid
-                          ? dueDate.toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                          : "Invalid Date"
-                        }
-                      </span>
-                      {isValid && task.deadline.includes("T") && (
-                        <span className="text-xs ml-1">
-                          • {dueDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                        </span>
-                      )}
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {/* ── Header: Title + Meta ── */}
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-1 min-w-0">
+                <h1
+                  className="text-xl sm:text-2xl font-bold text-foreground truncate cursor-default select-none"
+                  onDoubleClick={() => setDevMode((p) => !p)}
+                  title={devMode ? "Dev mode active" : undefined}
+                >
+                  {taskData.title}
+                </h1>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent font-semibold text-xs rounded-lg">
+                    {taskData.subject}
+                  </span>
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
+                    {statusLabelMap[task.status]}
+                  </span>
+                  {currentStage !== "Completed" && (
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 text-xs font-medium rounded-full">
+                      {currentStage}
                     </span>
-                  );
-                })()
-              ) : (
-                <span>No deadline set</span>
-              )}
+                  )}
+                </div>
+              </div>
             </div>
-
-            {/* Estimated Time */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock size={16} />
-              <span>Estimated: 2 hours</span>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {task.deadline && task.deadline !== "TBD" && task.deadline !== "null" && (() => { const d = new Date(task.deadline); return isValidDate(d) ? (
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  {d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              ) : null; })()}
+              <span className="flex items-center gap-1">
+                <Clock size={12} />
+                2h
+              </span>
             </div>
           </div>
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">{taskData.progress}% Complete</span>
-            <span className="text-sm font-semibold text-accent">{taskData.progress}%</span>
-          </div>
-          <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${taskData.progress}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {task.completedAt
-              ? `Completed ${new Date(task.completedAt).toLocaleDateString()}`
-              : task.startedAt
-                ? `Started ${new Date(task.startedAt).toLocaleDateString()}`
-                : "Not started yet"}
-          </p>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
-              +10%
-            </button>
-            <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
-              -10%
-            </button>
-            <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1.5 rounded-md bg-green-100 text-green-700 hover:opacity-90 transition-opacity">
-              Mark Complete
-            </button>
-            <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1.5 rounded-md bg-red-100 text-red-700 hover:opacity-90 transition-opacity">
-              Reset
-            </button>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground leading-relaxed">{taskData.description}</p>
-        
-      </div>
 
-      {/* RIGHT PANEL */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="border-b border-border bg-card">
-          <div className="flex overflow-x-auto p-6 gap-2">
+        {/* ── Tab Navigation (main mode switcher) ── */}
+        <div className="border-b border-border mb-6">
+          <div className="flex overflow-x-auto gap-1 scrollbar-none">
             {lessonTabs.map((tab) => {
               const IconComponent = tabIcons[tab];
               const isActive = activeTab === tab;
+              const stageInfo = stageStatuses.find(s => s.stage === tab);
+              const isLocked = stageInfo?.locked ?? false;
+              const isStageCompleted = stageInfo?.completed ?? false;
+
               return (
                 <button
                   key={tab}
-                  onClick={() => handleTabChange(tab)}
-                  className={`tab-button flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${isActive
-                    ? "active bg-accent text-white shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    }`}
+                  onClick={() => !isLocked && setActiveTab(tab)}
+                  disabled={isLocked}
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
+                    transition-all duration-200 relative
+                    ${isActive
+                      ? "text-accent border-b-2 border-accent"
+                      : isLocked
+                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        : "text-muted-foreground hover:text-foreground border-b-2 border-transparent hover:border-muted"
+                    }
+                    ${isStageCompleted && !isActive ? "text-green-600" : ""}
+                  `}
+                  title={isLocked ? "Complete previous stage first" : tabDescriptions[tab]}
                 >
-                  <IconComponent size={18} />
-                  {tab}
+                  <IconComponent size={15} />
+                  <span>{tab}</span>
+                  {isStageCompleted && <CheckCircle2 size={13} className="text-green-500" />}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          {activeTab === "Learn" && (
-            <div className="p-6 space-y-6 fade-in-panel">
-              {/* Hero Banner */}
-              <div className="bg-linear-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <GraduationCap className="w-6 h-6 text-primary" />
-                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">Learning Module</span>
-                    </div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">{task.title}</h1>
-                    <p className="text-muted-foreground text-sm max-w-2xl">{learningContent.overview}</p>
-                  </div>
-                  <div className="hidden lg:block">
-                    <Brain className="w-16 h-16 text-primary/20" />
-                  </div>
+        {/* ── Main Content Area ── */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left sidebar - sticky on desktop */}
+          <div className="w-full lg:w-64 shrink-0 lg:sticky lg:top-24 lg:self-start space-y-4">
+            <LearningStatusCard
+              progressState={lessonProgressState}
+              completedActivities={completedActivities}
+              remainingActivities={remainingActivities}
+              nextAction={nextAction}
+              estimatedMinutes={120}
+              onProgressAction={handleManualProgressAction}
+              onStartAction={handleStageClick}
+            />
+
+            {/* Hidden Dev Tools (double-click title to reveal) */}
+            {devMode && (
+              <div className="p-3 border border-dashed border-yellow-300 rounded-xl bg-yellow-50/50 dark:bg-yellow-950/10">
+                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-2 uppercase tracking-wider">⚙ Dev Tools</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">+10%</button>
+                  <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">-10%</button>
+                  <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 hover:opacity-90">Complete</button>
+                  <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-700 hover:opacity-90">Reset</button>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Key Points Grid */}
-              {learningContent.keyPoints && learningContent.keyPoints.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <Target size={20} /> Key Points
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {learningContent.keyPoints.map((point, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
-                        <CheckCircle2 size={18} className="text-accent shrink-0 mt-0.5" />
-                        <p className="text-sm text-foreground/80">{point}</p>
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            {activeTab === "Learn" && (
+              <div className="space-y-4 fade-in-panel">
+                {/* 1. Learning Module (always expanded) */}
+                <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <GraduationCap className="w-5 h-5 text-primary" />
+                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">Learning Module</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Example Card */}
-              {learningContent.example && (
-                <div className="space-y-3">
-                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <Lightbulb size={20} /> Example
-                  </h2>
-                  <div className="p-5 rounded-xl bg-accent/5 border border-accent/20">
-                    <p className="text-sm text-foreground/80 leading-relaxed">{learningContent.example}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Steps Timeline */}
-              {learningContent.steps && learningContent.steps.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <ListChecks size={20} /> Step by Step
-                  </h2>
-                  <div className="space-y-3">
-                    {learningContent.steps.map((step, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
-                        <div className="shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
-                          {idx + 1}
-                        </div>
-                        <p className="text-sm text-foreground/80">{step}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Pro Tip */}
-              {learningContent.proTip && (
-                <div className="space-y-3">
-                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <Sparkles size={20} /> Pro Tip
-                  </h2>
-                  <div className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {learningContent.proTip}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Visual Learning System */}
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                  <Eye size={20} /> Visual Concept Map
-                </h2>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  {task.visualData ? (
-                    <div className="w-full min-h-75">
-                      <NewVisualRenderer data={task.visualData} />
+                      <h2 className="text-xl font-bold text-foreground mb-2">{task.title}</h2>
+                      <p className="text-muted-foreground text-sm max-w-2xl">{learningContent.overview}</p>
                     </div>
-                  ) : hasLearningMaps ? (
-                    <div className="space-y-4">
-                      {/* Map selector buttons */}
-                      <div className="flex flex-wrap gap-2">
-                        {mapOptions.map((mapOption) => (
-                          <button
-                            key={mapOption.id}
-                            onClick={() => setSelectedPresetId(mapOption.id)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${selectedPresetId === mapOption.id
-                              ? "bg-accent text-white shadow-md"
-                              : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                    <div className="hidden lg:block">
+                      <Brain className="w-12 h-12 text-primary/20" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Visual Concept Map (always expanded) */}
+                <section className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="px-4 py-3 text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border">
+                    <Eye size={15} /> Visual Concept Map
+                  </div>
+                  <div className="p-4">
+                    {task.visualData ? (
+                      <div className="w-full min-h-75">
+                        <NewVisualRenderer data={task.visualData} />
+                      </div>
+                    ) : hasLearningMaps ? (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          {mapOptions.map((mapOption) => (
+                            <button
+                              key={mapOption.id}
+                              onClick={() => setSelectedPresetId(mapOption.id)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                selectedPresetId === mapOption.id
+                                  ? "bg-accent text-white shadow-md"
+                                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
                               }`}
-                          >
-                            {mapOption.icon} {mapOption.label}
-                          </button>
-                        ))}
+                            >
+                              {mapOption.icon} {mapOption.label}
+                            </button>
+                          ))}
+                        </div>
+                        {selectedMap && selectedVisualType ? (
+                          <OldVisualRenderer data={selectedMap.data} />
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Select a map to view the visualization.</p>
+                        )}
                       </div>
-                      {/* Old visual renderer */}
-                      {selectedMap && selectedVisualType ? (
-                        <OldVisualRenderer data={selectedMap.data} />
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Select a map to view the visualization.</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No visualization available for this topic.</p>
-                  )}
-                </div>
-              </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No visualization available for this topic.</p>
+                    )}
+                  </div>
+                </section>
 
-              {/* Progress Indicator (optional) */}
-              <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border">
-                Keep exploring – you’re making progress!
+                {/* 3. Key Points (collapsible, default closed) */}
+                {learningContent.keyPoints && learningContent.keyPoints.length > 0 && (
+                  <CollapsibleSection
+                    title="Key Points"
+                    icon={<Target size={15} />}
+                    defaultOpen={false}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                      {learningContent.keyPoints.map((point, idx) => (
+                        <div key={idx} className="flex items-start gap-2 p-3 rounded-lg bg-secondary/50">
+                          <CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" />
+                          <p className="text-sm text-foreground/80">{point}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {/* 4. Example (collapsible, default closed) */}
+                {learningContent.example && (
+                  <CollapsibleSection
+                    title="Example"
+                    icon={<Lightbulb size={15} />}
+                    defaultOpen={false}
+                  >
+                    <div className="p-4 rounded-lg bg-accent/5 border border-accent/20 mt-1">
+                      <p className="text-sm text-foreground/80 leading-relaxed">{learningContent.example}</p>
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {/* 5. Step by Step (collapsible, default closed) */}
+                {learningContent.steps && learningContent.steps.length > 0 && (
+                  <CollapsibleSection
+                    title="Step by Step"
+                    icon={<ListChecks size={15} />}
+                    defaultOpen={false}
+                  >
+                    <div className="space-y-2 mt-1">
+                      {learningContent.steps.map((step, idx) => (
+                        <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
+                          <div className="shrink-0 w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                          <p className="text-sm text-foreground/80">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {/* 6. Pro Tip (collapsible, default closed) */}
+                {learningContent.proTip && (
+                  <CollapsibleSection
+                    title="Pro Tip"
+                    icon={<Sparkles size={15} />}
+                    defaultOpen={false}
+                  >
+                    <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 mt-1">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {learningContent.proTip}</p>
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                <div className="text-center text-xs text-muted-foreground pt-2">
+                  Keep exploring — you're making progress!
+                </div>
               </div>
-            </div>
-          )}
-          {activeTab === "Practice" && (
-            <div className="p-6 fade-in-panel">
-              {!hasPracticeQuestions ? (
-                <div className="bg-card border border-border rounded-xl shadow-sm">
-                  <EmptyState
-                    icon={<Zap size={32} />}
-                    title="No data available for this section"
-                    description="This task does not include practice questions yet."
+            )}
+
+            {activeTab === "Practice" && (
+              <div className="fade-in-panel">
+                {!hasPracticeQuestions ? (
+                  <div className="bg-card border border-border rounded-xl shadow-sm">
+                    <EmptyState
+                      icon={<Zap size={32} />}
+                      title="No practice content available yet"
+                      description="This task does not include practice questions yet. Check back later or try the Learn section first."
+                    />
+                  </div>
+                ) : (
+                  <PracticeMode
+                    questions={practiceQuestions}
+                    subject={taskData.subject}
+                    onComplete={handlePracticeComplete}
                   />
-                </div>
-              ) : (
-                <PracticeMode
-                  questions={practiceQuestions}
-                  subject={taskData.subject}
-                  onComplete={handlePracticeComplete}
-                />
-              )}
-            </div>
-          )}
-          {activeTab === "Master" && (
-            <div className="p-6 fade-in-panel">
-              {!hasMasterQuestions ? (
-                <div className="bg-card border border-border rounded-xl shadow-sm">
-                  <EmptyState
-                    icon={<Trophy size={32} />}
-                    title="No data available for this section"
-                    description="This task does not include master questions yet."
+                )}
+              </div>
+            )}
+
+            {activeTab === "Master" && (
+              <div className="fade-in-panel">
+                {!hasMasterQuestions ? (
+                  <div className="bg-card border border-border rounded-xl shadow-sm">
+                    <EmptyState
+                      icon={<Trophy size={32} />}
+                      title="No mastery test available yet"
+                      description="This task does not include a mastery test yet. Complete the practice section first."
+                    />
+                  </div>
+                ) : (
+                  <MasterMode
+                    questions={masterQuestions}
+                    subject={taskData.subject}
+                    timeLimit={30}
+                    onComplete={handleMasterComplete}
                   />
-                </div>
-              ) : (
-                <MasterMode
-                  questions={masterQuestions}
-                  subject={taskData.subject}
-                  timeLimit={30}
-                  onComplete={handleMasterComplete}
-                />
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function isValidDate(d: Date): boolean {
+  return d instanceof Date && !isNaN(d.getTime());
 }

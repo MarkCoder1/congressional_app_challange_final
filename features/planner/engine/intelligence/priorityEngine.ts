@@ -120,6 +120,22 @@ export function calculateTaskPriority(
     difficultyScore = 2;
   }
 
+  // ── 7. Task type bonus (0-15) ──
+  let typeScore = 0;
+  if (task.type === "assignment") {
+    typeScore = 15;
+    reasons.push({ reason: "Assignment (needs extended focus)", weight: 15 });
+  } else if (task.type === "lesson") {
+    typeScore = 8;
+    reasons.push({ reason: "Lesson (foundational material)", weight: 8 });
+  } else if (task.type === "practice") {
+    typeScore = 5;
+    reasons.push({ reason: "Practice (reinforcement)", weight: 5 });
+  } else if (task.type === "review") {
+    typeScore = 3;
+    reasons.push({ reason: "Review (spaced repetition)", weight: 3 });
+  }
+
   // ── Completion check ──
   if (isTaskCompleted(task)) {
     return { score: 0, reasons: [{ reason: "Task completed", weight: 0 }] };
@@ -180,6 +196,7 @@ export function calculateTaskPriority(
     progressScore +
     dependencyScore +
     difficultyScore +
+    typeScore +
     profileBonus;
   const score = Math.min(100, Math.max(0, Math.round(rawScore)));
 

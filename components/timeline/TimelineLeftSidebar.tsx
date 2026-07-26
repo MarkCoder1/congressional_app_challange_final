@@ -132,9 +132,9 @@ export function TimelineLeftSidebar({
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
           <h3 className="text-sm font-bold mb-3">Upcoming</h3>
           <div className="space-y-2">
-            {upcomingBlocks.slice(0, 5).map((block) => (
+            {upcomingBlocks.slice(0, 5).map((block, index) => (
               <div
-                key={block.taskId}
+                key={`${block.taskId}-${block.date}-${index}`}
                 className="text-xs p-2 bg-secondary/50 rounded-lg"
               >
                 <p className="font-semibold line-clamp-1">{block.title}</p>

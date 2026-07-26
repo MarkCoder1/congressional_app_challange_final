@@ -13,6 +13,14 @@ interface TodayTimelineProps {
   onBlockClick: (block: StudyBlockResult) => void;
 }
 
+function formatPriorityLabel(score: number): string {
+  const rounded = Math.round(score);
+  if (rounded >= 90) return "Critical";
+  if (rounded >= 70) return "High";
+  if (rounded >= 40) return "Medium";
+  return "Low";
+}
+
 export function TodayTimeline({ blocks, taskStats, onBlockClick }: TodayTimelineProps) {
   const totalMinutes = blocks.reduce((sum, block) => sum + block.duration, 0);
 
@@ -87,7 +95,7 @@ export function TodayTimeline({ blocks, taskStats, onBlockClick }: TodayTimeline
 
                 return (
                   <motion.div
-                    key={block.taskId}
+                    key={`${block.taskId}-${block.date}-${idx}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: idx * 0.05 }}
@@ -114,9 +122,9 @@ export function TodayTimeline({ blocks, taskStats, onBlockClick }: TodayTimeline
                           <span className="text-xs px-2 py-1 bg-secondary rounded-md capitalize font-medium">
                             {block.type}
                           </span>
-                          {block.priorityScore && (
+                          {block.priorityScore != null && (
                             <span className="text-xs text-muted-foreground">
-                              Priority: {block.priorityScore.toFixed(1)}
+                              Priority: {formatPriorityLabel(block.priorityScore)}
                             </span>
                           )}
                         </div>

@@ -1,4 +1,4 @@
-import type { PlannerTask } from "../../types";
+import type { PlannerTask, PlannerPriority } from "../../types";
 import { isTaskCompleted, formatPlannerDateKey, addPlannerDays, parsePlannerDate } from "../normalizer";
 import { calculateTaskPriority } from "./priorityEngine";
 import { predictTaskDuration } from "./timePrediction";
@@ -13,6 +13,8 @@ export interface StudyBlock {
   duration: number;
   date: string; // YYYY-MM-DD
   reason: string;
+  priorityScore?: number;
+  priorityLevel?: PlannerPriority;
 }
 
 export interface StudyScheduleOptions {
@@ -58,6 +60,8 @@ export function generateStudySchedule(
 
   const blocks: StudyBlock[] = [];
   const dailyMinutes: Map<string, number> = new Map();
+  // Track unique (taskId, date) pairs to prevent duplicate sessions for the same task on the same date
+  const scheduledTaskDates: Set<string> = new Set();
 
   for (const { task, priority } of scored) {
     // Check dependencies
@@ -79,59 +83,59 @@ export function generateStudySchedule(
 
     if (!scheduledDate) continue; // No room in the horizon
 
-    // Predict duration
+    // Use estimated minutes directly (single source of truth), fall back to prediction only if no estimate
+    const taskEstimate = task.estimatedMinutes ?? 30;
     const predictedMinutes = predictTaskDuration(task).predictedMinutes;
-    const sessionMax = 50; // max minutes per study block
+    // Only use prediction if it differs significantly from estimate AND there's history to justify it
+    const hasHistory = (task.timeEstimateHistory ?? []).length > 0;
+    const effectiveMinutes = hasHistory ? predictedMinutes : taskEstimate;
+    const clampMax = Math.min(effectiveMinutes, maxDailyMinutes);
 
     // Determine block type
     const blockType = determineBlockType(task);
 
-    // Break into sessions
-    const sessions = Math.ceil(predictedMinutes / sessionMax);
-    const sessionDuration = Math.min(predictedMinutes, sessionMax);
+    // Generate ONE block per task per day — do NOT split into multiple duplicate sessions
+    // Use the full predicted/available duration for this single session
+    const currentDaily = dailyMinutes.get(scheduledDate) ?? 0;
+    const available = maxDailyMinutes - currentDaily;
+    const actualDuration = Math.min(clampMax, available);
 
-    for (let i = 0; i < sessions; i++) {
-      const blockDate =
-        i === 0
-          ? scheduledDate
-          : findBestDay(
-              task,
-              dailyMinutes,
-              maxDailyMinutes,
-              horizonDays,
-              referenceDate,
-              depsMet,
-            );
+    if (actualDuration <= 0) continue;
 
-      if (!blockDate) break;
+    // Prevent duplicate (taskId, date) entries
+    const taskDateKey = `${task.id}::${scheduledDate}`;
+    if (scheduledTaskDates.has(taskDateKey)) continue;
+    scheduledTaskDates.add(taskDateKey);
 
-      const currentDaily = dailyMinutes.get(blockDate) ?? 0;
-      const available = maxDailyMinutes - currentDaily;
-      const actualDuration = Math.min(sessionDuration, available);
+    dailyMinutes.set(scheduledDate, currentDaily + actualDuration);
 
-      if (actualDuration <= 0) continue;
+    const topReason = priority.reasons
+      .filter((r) => r.weight > 0)
+      .slice(0, 1)
+      .map((r) => r.reason)
+      .join("");
 
-      dailyMinutes.set(blockDate, currentDaily + actualDuration);
-
-      const topReason = priority.reasons
-        .filter((r) => r.weight > 0)
-        .slice(0, 1)
-        .map((r) => r.reason)
-        .join("");
-
-      blocks.push({
-        taskId: task.id,
-        title: task.title,
-        subject: task.subject,
-        type: blockType,
-        duration: actualDuration,
-        date: blockDate,
-        reason: topReason || "Scheduled",
-      });
-    }
+    blocks.push({
+      taskId: task.id,
+      title: task.title,
+      subject: task.subject,
+      type: blockType,
+      duration: actualDuration,
+      date: scheduledDate,
+      reason: topReason || "Scheduled",
+      priorityScore: priority.score,
+      priorityLevel: task.priority,
+    });
   }
 
-  return blocks;
+  // Safety deduplication: ensure no duplicate (taskId, date) pairs exist
+  const seen = new Set<string>();
+  return blocks.filter((block) => {
+    const key = `${block.taskId}::${block.date}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function determineBlockType(task: PlannerTask): StudyBlockType {

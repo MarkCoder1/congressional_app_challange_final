@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronLeft, ChevronRight, Search, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,6 +8,8 @@ interface TimelineHeaderProps {
   onViewChange: (view: "today" | "day" | "week" | "due") => void;
   selectedDate: Date;
   onDateChange: (date: Date) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export function TimelineHeader({
@@ -16,8 +17,9 @@ export function TimelineHeader({
   onViewChange,
   selectedDate,
   onDateChange,
+  searchQuery,
+  onSearchChange,
 }: TimelineHeaderProps) {
-  const [searchQuery, setSearchQuery] = useState("");
 
   const dateLabel = selectedDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -93,7 +95,7 @@ export function TimelineHeader({
             type="text"
             placeholder="Search tasks..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9 pr-4 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent w-64"
           />
         </div>

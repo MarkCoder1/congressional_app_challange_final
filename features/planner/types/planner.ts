@@ -371,6 +371,7 @@ export interface StudyBlockResult {
   date: string;
   reason: string;
   priorityScore?: number;
+  priorityLevel?: PlannerPriority;
   deadline?: string | null;
 }
 

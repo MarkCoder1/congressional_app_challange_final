@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, CheckCircle, XCircle, Lightbulb, RotateCcw } from "lucide-react";
+import { ChevronRight, CheckCircle, XCircle, Lightbulb, RotateCcw, Brain } from "lucide-react";
 import { PracticeQuestion } from "@/types/task";
 import { AIFeedback } from "./AIFeedback";
+import { StudentUnderstandingFeedback } from "@/components/task-workspace/StudentUnderstandingFeedback";
+import {
+  generateLearningStats,
+  generateUnderstandingFeedback,
+  detectWeakAreas,
+  type ConfidenceLevel,
+} from "@/lib/mockLearningData";
 
 
 interface PracticeResult {
   score: number;
   weakAreas: string[];
+  stats?: ReturnType<typeof generateLearningStats>;
+  feedback?: ReturnType<typeof generateUnderstandingFeedback>;
 }
 
 interface PracticeModeProps {
@@ -23,6 +32,11 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
   const [submitted, setSubmitted] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [showConfidence, setShowConfidence] = useState(false);
+  const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
+  const [startTime] = useState(() => Date.now());
+  const [practiceStats, setPracticeStats] = useState<ReturnType<typeof generateLearningStats> | null>(null);
+  const [practiceFeedback, setPracticeFeedback] = useState<ReturnType<typeof generateUnderstandingFeedback> | null>(null);
 
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -70,11 +84,31 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
           return ans !== q.correctAnswer;
         })
         .map(q => q.text);
-      onComplete?.({ score, weakAreas });
+      
+      // Calculate time spent
+      const timeSpentMinutes = Math.round((Date.now() - startTime) / 60000);
+      const mistakes = questions.length - totalCorrect;
+      
+      // Generate learning stats and feedback
+      const stats = generateLearningStats(score, questions.length, mistakes, timeSpentMinutes, confidence || "medium");
+      const feedback = generateUnderstandingFeedback(stats, weakAreas);
+      
+      // Store in state for rendering
+      setPracticeStats(stats);
+      setPracticeFeedback(feedback);
+      
+      onComplete?.({ 
+        score, 
+        weakAreas,
+        stats,
+        feedback 
+      });
     } else {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSubmitted(false);
       setShowHint(false);
+      setShowConfidence(false);
+      setConfidence(null);
     }
   };
 
@@ -121,6 +155,11 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
             .filter(q => (userAnswers[q.id] || "") !== q.correctAnswer)
             .map(q => q.text)}
         />
+
+        {/* Student Understanding Feedback (Phase 10.4) */}
+        {practiceFeedback && (
+          <StudentUnderstandingFeedback feedback={practiceFeedback} />
+        )}
 
         {/* Question Breakdown - Collapsible? Or keep as is */}
         <div>
@@ -262,7 +301,46 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
               </div>
             </div>
 
-            <button onClick={handleNext} className="btn-primary w-full flex items-center justify-center gap-2">
+            {/* Confidence Indicator */}
+            {!showConfidence && !isLastQuestion && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-900 mb-2">How confident are you about this answer?</p>
+                <div className="flex gap-2">
+                  {(["low", "medium", "high"] as ConfidenceLevel[]).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => {
+                        setConfidence(level);
+                        setShowConfidence(true);
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        level === "low"
+                          ? "bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+                          : level === "medium"
+                          ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-300"
+                          : "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+                      }`}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showConfidence && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                <p className="text-sm text-green-800">
+                  ✓ Confidence recorded: <span className="font-semibold">{confidence}</span>
+                </p>
+              </div>
+            )}
+
+            <button 
+              onClick={handleNext} 
+              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={!showConfidence && !isLastQuestion}
+            >
               {isLastQuestion ? "See Results" : "Next Question"}
               <ChevronRight size={18} />
             </button>

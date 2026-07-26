@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
       <Sidebar />
 

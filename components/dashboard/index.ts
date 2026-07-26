@@ -8,3 +8,7 @@ export { OverdueTasks } from "./OverdueTasks";
 export { AnalyticsOverview } from "./AnalyticsOverview";
 export { CompletedTasks } from "./CompletedTasks";
 export { DashboardSkeleton } from "./DashboardSkeleton";
+export { NextActionCard } from "./NextActionCard";
+export { TodayProgressCard } from "./TodayProgressCard";
+export { UpcomingWorkload } from "./UpcomingWorkload";
+export { QuickActions } from "./QuickActions";
