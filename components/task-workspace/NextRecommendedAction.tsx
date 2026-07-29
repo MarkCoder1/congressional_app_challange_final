@@ -69,9 +69,9 @@ export function NextRecommendedAction({
           </p>
           <button
             onClick={() => onStartAction(displayAction.targetTab)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all duration-200 shadow-md shadow-accent/20 hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all duration-200 shadow-sm shadow-accent/20 hover:shadow-md hover:shadow-accent/30 active:scale-[0.98]"
           >
-            <ActionIcon size={16} />
+            <ActionIcon size={15} />
             {displayAction.action}
             <ArrowRight size={14} />
           </button>

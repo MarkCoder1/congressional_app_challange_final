@@ -28,7 +28,6 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
   const [selectedBlock, setSelectedBlock] = useState<StudyBlockResult | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Single filtering pipeline - derive all state from blocks (which are already filtered by planner)
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => !isTaskCompleted(task));
   }, [tasks]);
@@ -41,7 +40,6 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
     return formatPlannerDateKey(new Date());
   }, []);
 
-  // Search filter — filters visible study blocks by task title and subject
   const filteredBlocks = useMemo(() => {
     if (!searchQuery.trim()) return blocks;
     const query = searchQuery.toLowerCase();
@@ -52,24 +50,20 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
     );
   }, [blocks, searchQuery]);
 
-  // Today's blocks - already filtered by planner to exclude completed tasks
   const todayBlocks = useMemo(() => {
     return filteredBlocks.filter((block) => block.date === todayStr);
   }, [filteredBlocks, todayStr]);
 
-  // Selected day blocks - for day view and calendar selection
   const selectedDayBlocks = useMemo(() => {
     return filteredBlocks.filter((block) => block.date === selectedDateStr);
   }, [filteredBlocks, selectedDateStr]);
 
-  // Upcoming blocks (future dates only)
   const upcomingBlocks = useMemo(() => {
     return filteredBlocks
       .filter((block) => block.date > todayStr)
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [filteredBlocks, todayStr]);
 
-  // Today's task stats (from tasks, not blocks)
   const todayTaskStats = useMemo(() => {
     const tasksDueToday = tasks.filter((task) => {
       if (!task.deadline) return false;
@@ -88,20 +82,18 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
     return <TimelineSkeleton />;
   }
 
-  // Show empty state only if we have no tasks at all
   if (tasks.length === 0) {
     return <EmptyTimeline />;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="p-6 lg:p-8">
+      <div className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-40">
+        <div className="page-container">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Timeline</h1>
-              <p className="text-muted-foreground text-sm mt-1">Your AI-generated study schedule</p>
+              <h1 className="page-title">Timeline</h1>
+              <p className="caption mt-1">Your AI-generated study schedule</p>
             </div>
           </div>
           <TimelineHeader
@@ -115,9 +107,7 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
         </div>
       </div>
 
-      {/* Main Layout */}
       <div className="flex">
-        {/* Left Sidebar */}
         <div className="hidden lg:block w-80 flex-shrink-0 border-r border-border bg-card/30 p-6">
           <TimelineLeftSidebar
             selectedDate={selectedDate}
@@ -128,8 +118,7 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
           />
         </div>
 
-        {/* Center: Timeline View */}
-        <div className="flex-1 p-6 lg:p-8">
+        <div className="flex-1 page-container">
           <AnimatePresence mode="wait">
             {view === "today" && (
               <TodayTimeline
@@ -164,16 +153,15 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
             )}
           </AnimatePresence>
 
-          {/* Summary Footer */}
           {view === "today" && todayBlocks.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-8 bg-gradient-to-r from-accent/5 to-accent/10 rounded-xl p-6 border border-accent/20 shadow-sm"
+              className="mt-8 bg-accent/5 rounded-xl p-5 border border-accent/20"
             >
               <p className="text-sm text-foreground">
-                <span className="font-bold text-accent">📊 Study Summary:</span>
+                <span className="font-bold text-accent">Study Summary:</span>
                 <span className="text-muted-foreground ml-2">
                   {Math.round(todayBlocks.reduce((sum, block) => sum + block.duration, 0) / 60)}h {(todayBlocks.reduce((sum, block) => sum + block.duration, 0) % 60)}m of focused learning across {todayBlocks.length} sessions
                 </span>
@@ -182,7 +170,6 @@ export function TimelineContainer({ blocks, tasks, loading }: TimelineContainerP
           )}
         </div>
 
-        {/* Right: Details Panel */}
         <TimelineSidebar
           block={selectedBlock}
           onClose={() => setSelectedBlock(null)}

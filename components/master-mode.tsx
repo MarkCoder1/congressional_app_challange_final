@@ -43,9 +43,9 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
   const getPerformanceLabel = (scoreVal: number) => {
-    if (scoreVal >= 80) return { label: "Excellent", color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
-    if (scoreVal >= 60) return { label: "Good", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
-    return { label: "Needs Improvement", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    if (scoreVal >= 80) return { label: "Excellent", color: "text-success", bg: "bg-success-tint", border: "border-success/20" };
+    if (scoreVal >= 60) return { label: "Good", color: "text-primary", bg: "bg-primary-tint", border: "border-primary/20" };
+    return { label: "Needs Improvement", color: "text-warning", bg: "bg-warning-tint", border: "border-warning/20" };
   };
 
   const performanceInfo = getPerformanceLabel(score);
@@ -142,16 +142,16 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
 
         {/* Performance Message (only for master mode) */}
         {score >= 80 ? (
-          <div className="bg-green-50 rounded-lg p-3 border border-green-200 text-center">
-            <p className="text-sm text-green-800">🏆 Outstanding! You've mastered this topic.</p>
+          <div className="bg-success-tint rounded-lg p-3 border border-success/20 text-center">
+            <p className="text-sm text-success">🏆 Outstanding! You've mastered this topic.</p>
           </div>
         ) : score >= 60 ? (
-          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-center">
-            <p className="text-sm text-blue-800">✓ Good performance! Review the questions you missed.</p>
+          <div className="bg-primary-tint rounded-lg p-3 border border-primary/20 text-center">
+            <p className="text-sm text-primary">✓ Good performance! Review the questions you missed.</p>
           </div>
         ) : (
-          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200 text-center">
-            <p className="text-sm text-orange-800">💪 Keep studying! Review the material and try again.</p>
+          <div className="bg-warning-tint rounded-lg p-3 border border-warning/20 text-center">
+            <p className="text-sm text-warning">💪 Keep studying! Review the material and try again.</p>
           </div>
         )}
 
@@ -169,20 +169,20 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
                 <div key={q.id} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
                   <div className="flex-shrink-0 mt-0.5">
                     {isQCorrect ? (
-                      <CheckCircle size={16} className="text-green-600" />
+                      <CheckCircle size={16} className="text-success" />
                     ) : (
-                      <XCircle size={16} className="text-red-600" />
+                      <XCircle size={16} className="text-error" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground">Q{idx + 1}: {q.text}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Your answer: <span className={isQCorrect ? "text-green-600" : "text-red-600"}>
+                      Your answer: <span className={isQCorrect ? "text-success" : "text-error"}>
                         {selectedOption?.text || "(no answer)"}
                       </span>
                     </p>
                     {!isQCorrect && (
-                      <p className="text-xs text-green-600 mt-0.5">
+                      <p className="text-xs text-success mt-0.5">
                         Correct: {correctOption?.text}
                       </p>
                     )}
@@ -212,7 +212,7 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
                   <Clock size={14} />
                   Time
                 </p>
-                <p className={`text-2xl font-bold font-mono ${timeRemaining < 60 ? "text-red-600" : "text-foreground"}`}>
+                <p className={`text-2xl font-bold font-mono ${timeRemaining < 60 ? "text-error" : "text-foreground"}`}>
                   {formatTime(timeRemaining)}
                 </p>
               </div>
@@ -280,14 +280,14 @@ export function MasterMode({ questions, subject, timeLimit, onComplete }: Master
           <div className="space-y-6">
             <div className={`p-6 rounded-lg border-2 ${
               isCorrect
-                ? "bg-green-50 border-green-200"
-                : "bg-red-50 border-red-200"
+                ? "bg-success-tint border-success/20"
+                : "bg-error-tint border-error/20"
             }`}>
               <div className="flex items-start gap-3">
                 {isCorrect ? (
-                  <CheckCircle size={24} className="text-green-600 flex-shrink-0 mt-1" />
+                  <CheckCircle size={24} className="text-success flex-shrink-0 mt-1" />
                 ) : (
-                  <XCircle size={24} className="text-red-600 flex-shrink-0 mt-1" />
+                  <XCircle size={24} className="text-error flex-shrink-0 mt-1" />
                 )}
                 <div className="flex-1">
                   <p className="font-bold text-lg mb-2">

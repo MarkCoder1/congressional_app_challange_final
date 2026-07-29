@@ -15,7 +15,6 @@ interface GroupedTasks {
 }
 
 export function UpcomingWorkload({ tasks }: UpcomingWorkloadProps) {
-  // Only show incomplete tasks that have a deadline
   const activeWithDeadlines = tasks.filter(
     (t) =>
       t.deadline &&
@@ -32,43 +31,41 @@ export function UpcomingWorkload({ tasks }: UpcomingWorkloadProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="bg-card border border-border rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+      className="card-dashboard"
     >
-      <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
-        <Calendar size={20} className="text-accent" />
+      <h3 className="card-title mb-4">
+        <Calendar size={18} className="text-accent" />
         Upcoming
       </h3>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {groups.map((group, gi) => (
           <motion.div
             key={group.label}
-            initial={{ opacity: 0, x: -16 }}
+            initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 + gi * 0.1, duration: 0.4 }}
           >
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="uppercase-label mb-2">
               {group.dateLabel}
             </p>
             <div className="space-y-2">
               {group.tasks.map((task, ti) => (
                 <motion.div
                   key={task.id}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + gi * 0.1 + ti * 0.05 }}
-                  className="flex items-center gap-3 bg-secondary/30 hover:bg-secondary/50 rounded-xl px-4 py-3 transition-all group cursor-default"
+                  className="flex items-center gap-3 bg-secondary/30 hover:bg-secondary/50 rounded-lg px-3.5 py-2.5 transition-all group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <BookOpen size={16} className="text-accent" />
+                  <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <BookOpen size={15} className="text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate group-hover:text-accent transition-colors">
+                    <p className="text-sm font-medium truncate group-hover:text-accent transition-colors">
                       {task.title}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {task.subject}
-                    </p>
+                    <p className="caption">{task.subject}</p>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-shrink-0">
                     <Clock size={12} />
@@ -83,8 +80,6 @@ export function UpcomingWorkload({ tasks }: UpcomingWorkloadProps) {
     </motion.div>
   );
 }
-
-/* ─── Grouping Logic ─────────────────────────────────── */
 
 function groupByTimeframe(tasks: Task[]): GroupedTasks[] {
   const now = new Date();

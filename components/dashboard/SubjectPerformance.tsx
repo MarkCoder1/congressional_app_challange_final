@@ -60,7 +60,7 @@ export function SubjectPerformance({ insights }: SubjectPerformanceProps) {
                       {insight.weakTopics.slice(0, 3).map((topic) => (
                         <span
                           key={topic}
-                          className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded-lg"
+                          className="text-xs px-2 py-1 bg-error-tint text-error rounded-lg"
                         >
                           {topic}
                         </span>
@@ -78,10 +78,10 @@ export function SubjectPerformance({ insights }: SubjectPerformanceProps) {
 }
 
 function getTrendIcon(trend: string | null) {
-  if (trend === "improving") return <TrendingUp className="text-green-600" size={18} />;
-  if (trend === "declining") return <TrendingDown className="text-red-600" size={18} />;
-  if (trend === "stable") return <Minus className="text-gray-500" size={18} />;
-  return <Activity className="text-gray-400" size={18} />;
+  if (trend === "improving") return <TrendingUp className="text-success" size={18} />;
+  if (trend === "declining") return <TrendingDown className="text-error" size={18} />;
+  if (trend === "stable") return <Minus className="text-muted" size={18} />;
+  return <Activity className="text-muted" size={18} />;
 }
 
 function formatPercent(value: number | null | undefined): string {

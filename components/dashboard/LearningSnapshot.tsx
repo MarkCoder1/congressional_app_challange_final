@@ -34,11 +34,11 @@ export function LearningSnapshot({ profile }: LearningSnapshotProps) {
             profile.masteryGrowthRate !== null ? (
               <span className="flex items-center gap-1">
                 {profile.masteryGrowthRate > 0 ? (
-                  <TrendingUp size={16} className="text-green-600" />
+                  <TrendingUp size={16} className="text-success" />
                 ) : profile.masteryGrowthRate < 0 ? (
-                  <TrendingDown size={16} className="text-red-600" />
+                  <TrendingDown size={16} className="text-error" />
                 ) : (
-                  <Minus size={16} className="text-gray-500" />
+                  <Minus size={16} className="text-muted" />
                 )}
                 {profile.masteryGrowthRate > 0 ? "+" : ""}
                 {profile.masteryGrowthRate}

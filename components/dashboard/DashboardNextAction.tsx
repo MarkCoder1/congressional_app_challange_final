@@ -16,14 +16,14 @@ export function DashboardNextAction({ nextAction }: DashboardNextActionProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-br from-green-50 via-card to-card border border-green-200 rounded-3xl p-8 shadow-lg"
+        className="bg-success-tint border border-success/20 rounded-3xl p-8 shadow-lg"
       >
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-            <Brain className="text-green-600" size={24} />
+          <div className="w-12 h-12 rounded-2xl bg-success-tint flex items-center justify-center">
+            <Brain className="text-success" size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-green-700 uppercase tracking-wider">
+            <p className="text-sm font-medium text-success uppercase tracking-wider">
               You're all caught up!
             </p>
             <h3 className="text-2xl font-bold mt-1">No recommendations right now</h3>
@@ -60,12 +60,12 @@ export function DashboardNextAction({ nextAction }: DashboardNextActionProps) {
           <span
             className={`px-3 py-1 rounded-full text-sm font-bold border ${
               nextAction.priorityScore >= 90
-                ? "text-red-600 bg-red-50 border-red-200"
+                ? "text-error bg-error-tint border-error/20"
                 : nextAction.priorityScore >= 70
-                  ? "text-orange-600 bg-orange-50 border-orange-200"
+                  ? "text-warning bg-warning-tint border-warning/20"
                   : nextAction.priorityScore >= 40
-                    ? "text-blue-600 bg-blue-50 border-blue-200"
-                    : "text-gray-600 bg-gray-50 border-gray-200"
+                    ? "text-primary bg-primary-tint border-primary/20"
+                    : "text-secondary bg-sunken border-border"
             }`}
           >
             {nextAction.priorityScore}

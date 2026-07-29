@@ -75,31 +75,31 @@ export function getTaskTypeStyle(taskType: string): {
   switch (type) {
     case "concept":
       return {
-        badge: "bg-blue-100 text-blue-700",
+        badge: "bg-primary-tint text-primary",
         icon: "📚",
         color: "blue",
       };
     case "lesson":
       return {
-        badge: "bg-green-100 text-green-700",
+        badge: "bg-success-tint text-success",
         icon: "📖",
         color: "green",
       };
     case "assignment":
       return {
-        badge: "bg-purple-100 text-purple-700",
+        badge: "bg-ai-violet-tint text-ai-violet",
         icon: "✍️",
         color: "purple",
       };
     case "mixed":
       return {
-        badge: "bg-orange-100 text-orange-700",
+        badge: "bg-warning-tint text-warning",
         icon: "🎯",
         color: "orange",
       };
     default:
       return {
-        badge: "bg-gray-100 text-gray-700",
+        badge: "bg-secondary text-secondary",
         icon: "📝",
         color: "gray",
       };

@@ -82,7 +82,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
           {/* Title */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              Task Title <span className="text-red-600">*</span>
+              Task Title <span className="text-error">*</span>
             </label>
             <input
               type="text"
@@ -96,7 +96,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
           {/* Subject */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              Subject <span className="text-red-600">*</span>
+              Subject <span className="text-error">*</span>
             </label>
             <select
               value={subject}
@@ -114,7 +114,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
           {/* Task Type */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              Type <span className="text-red-600">*</span>
+              Type <span className="text-error">*</span>
             </label>
             <select
               value={taskType}
@@ -132,7 +132,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
           {/* Deadline */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              Deadline <span className="text-red-600">*</span>
+              Deadline <span className="text-error">*</span>
             </label>
             <input
               type="date"

@@ -22,7 +22,7 @@ export function PlanStage({ assignment, completedSteps, onToggleStep, onPrev, on
           >
             <button onClick={() => onToggleStep(step.id)} className="flex-shrink-0 mt-0.5">
               {completedSteps[step.id] ? (
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <CheckCircle2 className="w-5 h-5 text-success" />
               ) : (
                 <Circle className="w-5 h-5 text-muted-foreground" />
               )}

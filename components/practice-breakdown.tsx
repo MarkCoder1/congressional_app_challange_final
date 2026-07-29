@@ -119,24 +119,24 @@ export function PracticeBreakdown({
 
                   {/* Key Point */}
                   {step.keyPoint && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-3">
-                      <Lightbulb size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="bg-primary-tint border border-primary/20 rounded-lg p-3 flex gap-3">
+                      <Lightbulb size={18} className="text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-semibold text-blue-900 mb-1">
+                        <p className="text-xs font-semibold text-primary mb-1">
                           Key Point
                         </p>
-                        <p className="text-sm text-blue-800">{step.keyPoint}</p>
+                        <p className="text-sm text-primary">{step.keyPoint}</p>
                       </div>
                     </div>
                   )}
 
                   {/* Example */}
                   {step.example && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-green-900 mb-2">
+                    <div className="bg-success-tint border border-success/20 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-success mb-2">
                         Example:
                       </p>
-                      <p className="text-sm text-green-800 font-mono">
+                      <p className="text-sm text-success font-mono">
                         {step.example}
                       </p>
                     </div>
@@ -144,13 +144,13 @@ export function PracticeBreakdown({
 
                   {/* Common Mistake */}
                   {step.commonMistake && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex gap-3">
-                      <AlertCircle size={18} className="text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div className="bg-warning-tint border border-warning/20 rounded-lg p-3 flex gap-3">
+                      <AlertCircle size={18} className="text-warning flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-semibold text-orange-900 mb-1">
+                        <p className="text-xs font-semibold text-warning mb-1">
                           Common Mistake
                         </p>
-                        <p className="text-sm text-orange-800">
+                        <p className="text-sm text-warning">
                           {step.commonMistake}
                         </p>
                       </div>
@@ -165,12 +165,12 @@ export function PracticeBreakdown({
 
       {/* Full Breakdown Panel */}
       {deepModeEnabled && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-          <h4 className="font-semibold text-purple-900 mb-3">Complete Breakdown</h4>
-          <p className="text-sm text-purple-800 leading-relaxed mb-4">
+        <div className="bg-ai-violet-tint border border-ai-violet/20 rounded-lg p-6">
+          <h4 className="font-semibold text-ai-violet mb-3">Complete Breakdown</h4>
+          <p className="text-sm text-ai-violet leading-relaxed mb-4">
             {fullExplanation}
           </p>
-          <div className="bg-white rounded-lg p-4 border border-purple-100">
+          <div className="bg-white rounded-lg p-4 border border-ai-violet/10">
             <p className="text-xs font-semibold text-muted-foreground mb-2">
               Final Answer:
             </p>

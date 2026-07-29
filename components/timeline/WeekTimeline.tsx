@@ -47,7 +47,7 @@ export function WeekTimeline({ blocks, selectedDate, onBlockClick }: WeekTimelin
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden"
+      className="card-base overflow-hidden"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 divide-y sm:divide-y-0 sm:divide-x divide-border">
         {weekDays.map((date, idx) => {
@@ -66,9 +66,8 @@ export function WeekTimeline({ blocks, selectedDate, onBlockClick }: WeekTimelin
                 isToday ? "bg-accent/5" : isSelectedWeek ? "bg-background" : "bg-secondary/20"
               }`}
             >
-              {/* Day Header */}
               <div className="text-center mb-4 pb-3 border-b border-border/50">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="uppercase-label">
                   {DAYS[date.getDay()]}
                 </p>
                 <div className="flex items-center justify-center gap-2 mt-1">
@@ -76,22 +75,19 @@ export function WeekTimeline({ blocks, selectedDate, onBlockClick }: WeekTimelin
                     {date.getDate()}
                   </p>
                   {isToday && (
-                    <span className="text-xs bg-accent text-white px-2 py-0.5 rounded-full font-semibold">
-                      Today
-                    </span>
+                    <span className="badge-accent text-xs px-2 py-0.5">Today</span>
                   )}
                 </div>
                 {totalMinutes > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="caption mt-1">
                     {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
                   </p>
                 )}
               </div>
 
-              {/* Blocks */}
               <div className="space-y-2">
                 {dayBlocks.length === 0 ? (
-                  <p className="text-xs text-center text-muted-foreground py-4">
+                  <p className="caption text-center py-4">
                     No sessions
                   </p>
                 ) : (

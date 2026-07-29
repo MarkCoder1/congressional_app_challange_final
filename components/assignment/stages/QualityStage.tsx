@@ -68,7 +68,7 @@ export function QualityStage({
               </ul>
             </div>
             {improvedText && (
-              <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 border border-green-200">
+              <div className="bg-success-tint dark:bg-success/20 rounded-lg p-4 border border-success/20">
                 <h3 className="font-medium mb-2">✨ Suggested rewrite</h3>
                 <p className="text-sm">{improvedText}</p>
               </div>

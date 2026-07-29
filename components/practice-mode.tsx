@@ -175,20 +175,20 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
                 <div key={q.id} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
                   <div className="flex-shrink-0 mt-0.5">
                     {isQCorrect ? (
-                      <CheckCircle size={16} className="text-green-600" />
+                      <CheckCircle size={16} className="text-success" />
                     ) : (
-                      <XCircle size={16} className="text-red-600" />
+                      <XCircle size={16} className="text-error" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground">Q{idx + 1}: {q.text}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Your answer: <span className={isQCorrect ? "text-green-600" : "text-red-600"}>
+                      Your answer: <span className={isQCorrect ? "text-success" : "text-error"}>
                         {selectedOption?.text || "(no answer)"}
                       </span>
                     </p>
                     {!isQCorrect && (
-                      <p className="text-xs text-green-600 mt-0.5">
+                      <p className="text-xs text-success mt-0.5">
                         Correct: {correctOption?.text}
                       </p>
                     )}
@@ -236,14 +236,14 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
           <div className="mb-8">
             <button
               onClick={() => setShowHint(!showHint)}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-tint text-primary hover:bg-primary-tint transition-colors border border-primary/20"
             >
               <Lightbulb size={18} />
               <span className="font-medium">{showHint ? "Hide Hint" : "Show Hint"}</span>
             </button>
             {showHint && (
-              <div className="mt-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
-                <p className="text-sm text-blue-800">{currentQuestion.hint}</p>
+              <div className="mt-3 p-4 rounded-lg bg-primary-tint border border-primary/20">
+                <p className="text-sm text-primary">{currentQuestion.hint}</p>
               </div>
             )}
           </div>
@@ -280,12 +280,12 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
           </div>
         ) : (
           <div className="space-y-6">
-            <div className={`p-6 rounded-lg border-2 ${isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+            <div className={`p-6 rounded-lg border-2 ${isCorrect ? "bg-success-tint border-success/20" : "bg-error-tint border-error/20"}`}>
               <div className="flex items-start gap-3">
                 {isCorrect ? (
-                  <CheckCircle size={24} className="text-green-600 flex-shrink-0 mt-1" />
+                  <CheckCircle size={24} className="text-success flex-shrink-0 mt-1" />
                 ) : (
-                  <XCircle size={24} className="text-red-600 flex-shrink-0 mt-1" />
+                  <XCircle size={24} className="text-error flex-shrink-0 mt-1" />
                 )}
                 <div className="flex-1">
                   <p className="font-bold text-lg mb-2">{isCorrect ? "Correct!" : "Incorrect"}</p>
@@ -303,8 +303,8 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
 
             {/* Confidence Indicator */}
             {!showConfidence && !isLastQuestion && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-blue-900 mb-2">How confident are you about this answer?</p>
+              <div className="bg-primary-tint border border-primary/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-primary mb-2">How confident are you about this answer?</p>
                 <div className="flex gap-2">
                   {(["low", "medium", "high"] as ConfidenceLevel[]).map((level) => (
                     <button
@@ -315,10 +315,10 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
                       }}
                       className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                         level === "low"
-                          ? "bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+                          ? "bg-error-tint text-error hover:bg-error-tint border border-error/30"
                           : level === "medium"
-                          ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-300"
-                          : "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+                          ? "bg-warning-tint text-warning hover:bg-warning-tint border border-warning/30"
+                          : "bg-success-tint text-success hover:bg-success-tint border border-success/30"
                       }`}
                     >
                       {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -329,8 +329,8 @@ export function PracticeMode({ questions, subject, onComplete }: PracticeModePro
             )}
 
             {showConfidence && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                <p className="text-sm text-green-800">
+              <div className="bg-success-tint border border-success/20 rounded-lg p-3 text-center">
+                <p className="text-sm text-success">
                   ✓ Confidence recorded: <span className="font-semibold">{confidence}</span>
                 </p>
               </div>

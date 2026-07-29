@@ -13,7 +13,7 @@ export function ExecutionStepItem({ step, onToggle, onDelete }: ExecutionStepIte
     <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
       <button onClick={() => onToggle(step.id)} className="flex-shrink-0">
         {step.completed ? (
-          <CheckCircle2 className="w-5 h-5 text-green-500" />
+          <CheckCircle2 className="w-5 h-5 text-success" />
         ) : (
           <Circle className="w-5 h-5 text-muted-foreground" />
         )}
@@ -21,7 +21,7 @@ export function ExecutionStepItem({ step, onToggle, onDelete }: ExecutionStepIte
       <span className={`flex-1 text-sm ${step.completed ? "line-through text-muted-foreground" : ""}`}>
         {step.title}
       </span>
-      <button onClick={() => onDelete(step.id)} className="text-muted-foreground hover:text-red-500">
+      <button onClick={() => onDelete(step.id)} className="text-muted-foreground hover:text-error">
         <Trash2 size={16} />
       </button>
     </div>

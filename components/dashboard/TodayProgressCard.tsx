@@ -30,80 +30,77 @@ export function TodayProgressCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15 }}
-      className="bg-card border border-border rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+      className="card-dashboard"
     >
-      <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
-        <Target size={20} className="text-accent" />
+      <h3 className="card-title mb-4">
+        <Target size={18} className="text-accent" />
         Today's Progress
       </h3>
 
-      {/* Task completion count */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-          <CheckCircle2 className="text-green-600" size={24} />
+        <div className="w-11 h-11 rounded-xl bg-success/10 flex items-center justify-center">
+          <CheckCircle2 className="text-success" size={20} />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Tasks completed</p>
-          <p className="text-3xl font-bold">
+          <p className="caption">Tasks completed</p>
+          <p className="text-2xl font-bold">
             {completedTasks}
-            <span className="text-lg font-normal text-muted-foreground">
+            <span className="text-base font-normal text-muted-foreground">
               /{totalTasks}
             </span>
           </p>
         </div>
       </div>
 
-      {/* Animated progress bar */}
-      <div className="mb-6">
+      <div className="mb-5">
         <div className="flex justify-between text-sm mb-2">
           <span className="text-muted-foreground">Overall progress</span>
           <span className="font-semibold">{progressPercent}%</span>
         </div>
-        <div className="h-3 bg-secondary rounded-full overflow-hidden">
+        <div className="progress-bar">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 1.2, ease: "easeOut" }}
-            className="h-full bg-gradient-to-r from-accent/80 to-accent rounded-full"
+            className="progress-fill"
           />
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-secondary/40 rounded-xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock size={16} className="text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Study Time</span>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="card-stat">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Clock size={14} className="text-muted-foreground" />
+            <span className="metadata">Study Time</span>
           </div>
-          <p className="font-bold text-lg">
+          <p className="font-bold text-base">
             {totalStudyMinutes > 0
               ? `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`
               : "—"}
           </p>
         </div>
-        <div className="bg-secondary/40 rounded-xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <Brain size={16} className="text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Focus Sessions</span>
+        <div className="card-stat">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Brain size={14} className="text-muted-foreground" />
+            <span className="metadata">Focus Sessions</span>
           </div>
-          <p className="font-bold text-lg">
+          <p className="font-bold text-base">
             {focusSessions > 0 ? focusSessions : "—"}
           </p>
         </div>
-        <div className="bg-secondary/40 rounded-xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 size={16} className="text-green-600" />
-            <span className="text-xs text-muted-foreground">Completed</span>
+        <div className="card-stat">
+          <div className="flex items-center gap-1.5 mb-1">
+            <CheckCircle2 size={14} className="text-success" />
+            <span className="metadata">Completed</span>
           </div>
-          <p className="font-bold text-lg">{completedTasks}</p>
+          <p className="font-bold text-base">{completedTasks}</p>
         </div>
-        <div className="bg-secondary/40 rounded-xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <Target size={16} className="text-blue-600" />
-            <span className="text-xs text-muted-foreground">In Progress</span>
+        <div className="card-stat">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Target size={14} className="text-accent" />
+            <span className="metadata">In Progress</span>
           </div>
-          <p className="font-bold text-lg">{inProgressTasks}</p>
+          <p className="font-bold text-base">{inProgressTasks}</p>
         </div>
       </div>
     </motion.div>

@@ -42,7 +42,7 @@ export function CompletedTasks({ tasks }: CompletedTasksProps) {
                   </h5>
                   <p className="text-sm text-muted-foreground">{task.subject}</p>
                 </div>
-                <div className="text-green-600 font-semibold">100%</div>
+                <div className="text-success font-semibold">100%</div>
               </div>
             </Link>
           ))}
@@ -62,7 +62,7 @@ function CollapsibleHeader({ count }: { count: number }) {
       aria-expanded={isOpen}
     >
       <div className="flex items-center gap-3">
-        <Trophy className="text-yellow-500" size={22} />
+        <Trophy className="text-warning" size={22} />
         <span className="font-semibold">Completed Tasks ({count})</span>
       </div>
       {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}

@@ -2,17 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { Settings, User } from "lucide-react";
-
-const pageNames: Record<string, string> = {
-  "/": "Dashboard",
-  "/timeline": "Timeline",
-  "/task/1": "Task Workspace",
-};
+import { Button } from "@/components/ui/button";
+import { HelpMenu } from "@/components/HelpMenu";
 
 export function Header() {
   const pathname = usePathname();
 
-  // For dynamic routes like /task/[id]
   let title = "Dashboard";
   if (pathname === "/") {
     title = "Dashboard";
@@ -20,25 +15,29 @@ export function Header() {
     title = "Timeline";
   } else if (pathname.startsWith("/task/")) {
     title = "Task Workspace";
+  } else if (pathname.startsWith("/assignments/")) {
+    title = "Assignment Workspace";
+  } else if (pathname === "/create-task") {
+    title = "Create Task";
   }
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 w-full border-b border-border bg-card/80 backdrop-blur-md">
       <div className="flex h-16 items-center justify-between px-6">
-        {/* Title */}
         <div className="hidden lg:block">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="page-title text-lg">{title}</h2>
         </div>
 
-        {/* Right Side - User Actions */}
-        <div className="flex items-center gap-4 ml-auto">
-          <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
+        <div className="flex items-center gap-1 ml-auto">
+          <div className="relative">
+            <HelpMenu />
+          </div>
+          <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings size={20} className="text-muted-foreground" />
-          </button>
-
-          <button className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-semibold hover:opacity-90 transition-opacity">
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="User profile" className="rounded-full bg-accent text-white hover:bg-accent/90 hover:text-white w-10 h-10">
             <User size={20} />
-          </button>
+          </Button>
         </div>
       </div>
     </header>

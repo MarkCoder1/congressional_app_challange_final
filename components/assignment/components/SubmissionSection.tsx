@@ -76,7 +76,7 @@ export function SubmissionSection({
                 <a href={link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline text-sm truncate">
                   {link}
                 </a>
-                <button onClick={() => onRemoveLink(idx)} className="text-muted-foreground hover:text-red-500">
+                <button onClick={() => onRemoveLink(idx)} className="text-muted-foreground hover:text-error">
                   <X size={16} />
                 </button>
               </li>
@@ -109,7 +109,7 @@ export function SubmissionSection({
                   <FileText size={14} />
                   <span className="text-sm truncate">{file.name}</span>
                 </div>
-                <button onClick={() => onRemoveFile(idx)} className="text-muted-foreground hover:text-red-500">
+                <button onClick={() => onRemoveFile(idx)} className="text-muted-foreground hover:text-error">
                   <X size={16} />
                 </button>
               </div>
@@ -151,7 +151,7 @@ export function SubmissionSection({
                     {tool.url}
                   </a>
                 </div>
-                <button onClick={() => onRemoveTool(idx)} className="text-muted-foreground hover:text-red-500">
+                <button onClick={() => onRemoveTool(idx)} className="text-muted-foreground hover:text-error">
                   <X size={16} />
                 </button>
               </li>

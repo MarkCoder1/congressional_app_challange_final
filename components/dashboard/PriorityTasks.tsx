@@ -63,7 +63,7 @@ export function PriorityTasks({ tasks, priorityScores }: PriorityTasksProps) {
                       <div className="flex items-center gap-3 mt-2">
                         {task.deadline && (
                           <span
-                            className={`text-xs flex items-center gap-1 ${daysLeft !== null && daysLeft < 0 ? "text-red-600" : "text-muted-foreground"}`}
+                            className={`text-xs flex items-center gap-1 ${daysLeft !== null && daysLeft < 0 ? "text-error" : "text-muted-foreground"}`}
                           >
                             <Calendar size={12} />
                             {daysLeft === null || daysLeft < 0
@@ -103,15 +103,15 @@ function getDaysLeft(deadline: string | null): number | null {
 }
 
 function getPriorityColor(score: number): string {
-  if (score >= 90) return "text-red-600 bg-red-50 border-red-200";
-  if (score >= 70) return "text-orange-600 bg-orange-50 border-orange-200";
-  if (score >= 40) return "text-blue-600 bg-blue-50 border-blue-200";
-  return "text-gray-600 bg-gray-50 border-gray-200";
+  if (score >= 90) return "text-error bg-error-tint border-error/20";
+  if (score >= 70) return "text-warning bg-warning-tint border-warning/20";
+  if (score >= 40) return "text-primary bg-primary-tint border-primary/20";
+  return "text-secondary bg-sunken border-border";
 }
 
 function getPriorityBadgeColor(score: number): string {
-  if (score >= 90) return "bg-red-500";
-  if (score >= 70) return "bg-orange-500";
-  if (score >= 40) return "bg-blue-500";
-  return "bg-gray-400";
+  if (score >= 90) return "bg-error";
+  if (score >= 70) return "bg-warning";
+  if (score >= 40) return "bg-primary";
+  return "bg-border-strong";
 }

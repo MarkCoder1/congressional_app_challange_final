@@ -68,12 +68,12 @@ export function CompletionCelebration({
           <Trophy size={36} className="text-white" />
         </motion.div>
         <h2 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-          <Sparkles size={24} className="text-yellow-500" />
-          Task Completed!
-          <Sparkles size={24} className="text-yellow-500" />
+          <Sparkles size={24} className="text-warning" />
+          Learning Journey Completed!
+          <Sparkles size={24} className="text-warning" />
         </h2>
         <p className="text-muted-foreground">
-          Great work! You've completed all sections of this task.
+          Great job! You completed a complete learning journey.
         </p>
       </motion.div>
 
@@ -90,15 +90,15 @@ export function CompletionCelebration({
           <p className="text-xs text-muted-foreground">Final Progress</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-4 text-center">
-          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-950/20 flex items-center justify-center mx-auto mb-2">
-            <Clock size={18} className="text-green-600 dark:text-green-400" />
+            <div className="w-10 h-10 rounded-full bg-success-tint dark:bg-success/20 flex items-center justify-center mx-auto mb-2">
+              <Clock size={18} className="text-success dark:text-success" />
           </div>
           <p className="text-2xl font-bold text-foreground">{timeSpent}</p>
           <p className="text-xs text-muted-foreground">Time Spent</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-4 text-center">
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950/20 flex items-center justify-center mx-auto mb-2">
-            <Zap size={18} className="text-purple-600 dark:text-purple-400" />
+            <div className="w-10 h-10 rounded-full bg-ai-violet-tint dark:bg-ai-violet/20 flex items-center justify-center mx-auto mb-2">
+              <Zap size={18} className="text-ai-violet dark:text-ai-violet" />
           </div>
           <p className="text-2xl font-bold text-foreground">{accuracy}%</p>
           <p className="text-xs text-muted-foreground">Accuracy</p>
@@ -127,7 +127,7 @@ export function CompletionCelebration({
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Mastered</p>
                   <div className="space-y-1">
                     {learningReport.topicsMastered.map((topic, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                      <div key={idx} className="flex items-center gap-2 text-sm text-success dark:text-success">
                         <CheckCircle2 size={14} className="shrink-0" />
                         <span>{topic}</span>
                       </div>
@@ -142,7 +142,7 @@ export function CompletionCelebration({
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Review</p>
                   <div className="space-y-1">
                     {learningReport.topicsToImprove.map((topic, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                      <div key={idx} className="flex items-center gap-2 text-sm text-reco-amber dark:text-reco-amber">
                         <AlertCircle size={14} className="shrink-0" />
                         <span>{topic}</span>
                       </div>
@@ -167,7 +167,7 @@ export function CompletionCelebration({
       {/* Completed Sections */}
       <motion.div variants={itemVariants} className="mb-8">
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-green-600" />
+          <CheckCircle2 size={16} className="text-success" />
           Completed Sections
         </h3>
         <div className="space-y-2">
@@ -177,10 +177,10 @@ export function CompletionCelebration({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 + idx * 0.1 }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800"
+              className="flex items-center gap-3 p-3 rounded-xl bg-success-tint dark:bg-success/20 border border-success/20 dark:border-success/80"
             >
-              <Star size={14} className="text-green-600 dark:text-green-400 shrink-0" />
-              <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+              <Star size={14} className="text-success dark:text-success shrink-0" />
+              <span className="text-sm text-success dark:text-success font-medium">
                 {section}
               </span>
             </motion.div>

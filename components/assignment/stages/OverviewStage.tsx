@@ -21,7 +21,7 @@ export function OverviewStage({ assignment, onNext }: OverviewStageProps) {
         <ul className="space-y-2">
           {assignment.understanding.successCriteria.map((c, i) => (
             <li key={i} className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-success mt-0.5" />
               <span className="text-sm">{c}</span>
             </li>
           ))}

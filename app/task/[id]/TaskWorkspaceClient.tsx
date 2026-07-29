@@ -1,7 +1,7 @@
-// /app/task/[id]/TaskWorkspaceClient.tsx
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
   Zap,
@@ -18,9 +18,11 @@ import {
   FileText,
   Eye,
   ChevronDown,
-  ChevronUp,
-  ChevronRight,
 } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
+import { staggerContainer, staggerItem } from "@/lib/animations";
+import { Tooltip } from "@/components/ui/tooltip";
+import { FirstTaskIntro } from "@/components/FirstTaskIntro";
 import type { LucideIcon } from "lucide-react";
 import { PracticeMode } from "@/components/practice-mode";
 import { MasterMode } from "@/components/master-mode";
@@ -44,7 +46,6 @@ import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
 
-// Task workspace components
 import { LearningStatusCard } from "@/components/task-workspace/LearningStatusCard";
 import { CompletionCelebration } from "@/components/task-workspace/CompletionCelebration";
 import type { LearningStage, StageStatus, LessonProgressState, NextAction } from "@/components/task-workspace/types";
@@ -59,10 +60,10 @@ const tabIcons: Record<TabType, LucideIcon> = {
 };
 
 const tabDescriptions: Record<TabType, string> = {
-  Learn: "Understand the concept",
-  Practice: "Apply your knowledge",
-  Master: "Check your understanding",
-  Assignment: "Complete your work",
+  Learn: "Understand the concept with explanations and visual guides",
+  Practice: "Test your knowledge with practice questions",
+  Master: "Prove your mastery with a timed challenge",
+  Assignment: "Complete your assignment work",
 };
 
 interface TaskWorkspaceClientProps {
@@ -78,9 +79,9 @@ const statusLabelMap: Record<Task["status"], string> = {
 };
 
 const statusPillClassMap: Record<Task["status"], string> = {
-  not_started: "bg-secondary text-muted-foreground",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
+  not_started: "badge-default",
+  in_progress: "badge-accent",
+  completed: "badge-success",
 };
 
 function CollapsibleSection({
@@ -96,7 +97,7 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="rounded-xl border border-border bg-card overflow-hidden">
+    <section className="card-base overflow-hidden">
       <button
         onClick={() => setOpen((p) => !p)}
         className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary/50 transition-colors"
@@ -108,7 +109,7 @@ function CollapsibleSection({
         />
       </button>
       {open && (
-        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="px-4 pb-4 fade-in-panel">
           {children}
         </div>
       )}
@@ -131,8 +132,16 @@ export default function TaskWorkspaceClient({
   const lessonStartSentRef = useRef(!!initialTask.startedAt);
   const learnViewSentRef = useRef(!!initialTask.progressMeta?.learnCompleted);
 
-  // Dev mode hidden state (double-click title to reveal)
   const [devMode, setDevMode] = useState(false);
+  const [showFirstTaskIntro, setShowFirstTaskIntro] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem("studyflow_first_task_intro_seen");
+  });
+
+  const handleFirstTaskDismiss = useCallback(() => {
+    localStorage.setItem("studyflow_first_task_intro_seen", "true");
+    setShowFirstTaskIntro(false);
+  }, []);
 
   useEffect(() => {
     if (task.status === "completed" && task.progress >= 100) {
@@ -188,7 +197,6 @@ export default function TaskWorkspaceClient({
     stats?: ReturnType<typeof generateLearningStats>;
     feedback?: ReturnType<typeof generateUnderstandingFeedback>;
   }) => {
-    // Generate learning report if we have stats
     if (result.stats && result.feedback) {
       const report = generateLearningReport(
         result.stats,
@@ -213,7 +221,6 @@ export default function TaskWorkspaceClient({
     }
   };
 
-  // ---- Derived state ----
   const progressMeta = task.progressMeta ?? {};
   const learnCompleted = !!progressMeta.learnCompleted;
   const practiceCompleted = !!progressMeta.practiceCompleted;
@@ -290,11 +297,10 @@ export default function TaskWorkspaceClient({
 
   const handleStageClick = (stage: LearningStage) => setActiveTab(stage as TabType);
 
-  // Guard: no task
   if (!task) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-sm">
+        <div className="w-full max-w-2xl">
           <EmptyState
             icon={<BookOpen size={32} />}
             title="No task found"
@@ -307,7 +313,6 @@ export default function TaskWorkspaceClient({
     );
   }
 
-  // Assignment-only view
   if (hasAssignment && assignment) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -315,12 +320,12 @@ export default function TaskWorkspaceClient({
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold text-foreground">{task.title}</h1>
-              <span className="px-2.5 py-1 bg-accent/10 text-accent font-semibold text-xs rounded-lg">{task.subject}</span>
-              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
+              <span className="badge-accent">{task.subject}</span>
+              <span className={`badge ${statusPillClassMap[task.status]}`}>
                 {statusLabelMap[task.status]}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 caption">
               <span className="flex items-center gap-1"><Calendar size={12} /> Due: —</span>
               <span className="flex items-center gap-1"><Clock size={12} /> 2h</span>
             </div>
@@ -338,7 +343,6 @@ export default function TaskWorkspaceClient({
     );
   }
 
-  // ----- LESSON UI -----
   const taskData = {
     id: task.id,
     title: task.title,
@@ -369,7 +373,6 @@ export default function TaskWorkspaceClient({
     steps: [],
   };
 
-  // Completion celebration
   if (showCompletion) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -391,51 +394,57 @@ export default function TaskWorkspaceClient({
   const lessonTabs: TabType[] = ["Learn", "Practice", "Master"];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-        {/* ── Header: Title + Meta ── */}
-        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex-1 min-w-0">
-                <h1
-                  className="text-xl sm:text-2xl font-bold text-foreground truncate cursor-default select-none"
-                  onDoubleClick={() => setDevMode((p) => !p)}
-                  title={devMode ? "Dev mode active" : undefined}
-                >
-                  {taskData.title}
-                </h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="px-2.5 py-1 bg-accent/10 text-accent font-semibold text-xs rounded-lg">
-                    {taskData.subject}
-                  </span>
-                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusPillClassMap[task.status]}`}>
-                    {statusLabelMap[task.status]}
-                  </span>
-                  {currentStage !== "Completed" && (
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 text-xs font-medium rounded-full">
-                      {currentStage}
+    <PageTransition>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div variants={staggerItem} className="card-base p-4 sm:p-6 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-1 min-w-0">
+                    <h1
+                      className="text-xl sm:text-2xl font-bold text-foreground truncate cursor-default select-none"
+                      onDoubleClick={() => setDevMode((p) => !p)}
+                      title={devMode ? "Dev mode active" : undefined}
+                    >
+                      {taskData.title}
+                    </h1>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="badge-accent">{taskData.subject}</span>
+                      <span className={`badge ${statusPillClassMap[task.status]}`}>
+                        {statusLabelMap[task.status]}
+                      </span>
+                      {currentStage !== "Completed" && (
+                        <span className="badge-accent">{currentStage}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 caption">
+                  {task.deadline && task.deadline !== "TBD" && task.deadline !== "null" && (() => { const d = new Date(task.deadline); return isValidDate(d) ? (
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      {d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
-                  )}
+                  ) : null; })()}
+                  <span className="flex items-center gap-1">
+                    <Clock size={12} />
+                    2h
+                  </span>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              {task.deadline && task.deadline !== "TBD" && task.deadline !== "null" && (() => { const d = new Date(task.deadline); return isValidDate(d) ? (
-                <span className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  {d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
-              ) : null; })()}
-              <span className="flex items-center gap-1">
-                <Clock size={12} />
-                2h
-              </span>
-            </div>
-          </div>
-        </div>
+            </motion.div>
 
-        {/* ── Tab Navigation (main mode switcher) ── */}
+          {showFirstTaskIntro && (
+            <motion.div variants={staggerItem}>
+              <FirstTaskIntro onDismiss={handleFirstTaskDismiss} />
+            </motion.div>
+          )}
+
         <div className="border-b border-border mb-6">
           <div className="flex overflow-x-auto gap-1 scrollbar-none">
             {lessonTabs.map((tab) => {
@@ -446,35 +455,27 @@ export default function TaskWorkspaceClient({
               const isStageCompleted = stageInfo?.completed ?? false;
 
               return (
-                <button
+                <Tooltip
                   key={tab}
-                  onClick={() => !isLocked && setActiveTab(tab)}
-                  disabled={isLocked}
-                  className={`
-                    flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
-                    transition-all duration-200 relative
-                    ${isActive
-                      ? "text-accent border-b-2 border-accent"
-                      : isLocked
-                        ? "text-muted-foreground/30 cursor-not-allowed"
-                        : "text-muted-foreground hover:text-foreground border-b-2 border-transparent hover:border-muted"
-                    }
-                    ${isStageCompleted && !isActive ? "text-green-600" : ""}
-                  `}
-                  title={isLocked ? "Complete previous stage first" : tabDescriptions[tab]}
+                  content={isLocked ? "Complete previous stage first" : tabDescriptions[tab]}
+                  side="bottom"
                 >
-                  <IconComponent size={15} />
-                  <span>{tab}</span>
-                  {isStageCompleted && <CheckCircle2 size={13} className="text-green-500" />}
-                </button>
+                  <button
+                    onClick={() => !isLocked && setActiveTab(tab)}
+                    disabled={isLocked}
+                    className={`tab-button ${isActive ? "active" : ""} ${isStageCompleted && !isActive ? "text-success" : ""}`}
+                  >
+                    <IconComponent size={15} />
+                    <span>{tab}</span>
+                    {isStageCompleted && <CheckCircle2 size={13} className="text-success" />}
+                  </button>
+                </Tooltip>
               );
             })}
           </div>
         </div>
 
-        {/* ── Main Content Area ── */}
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left sidebar - sticky on desktop */}
           <div className="w-full lg:w-64 shrink-0 lg:sticky lg:top-24 lg:self-start space-y-4">
             <LearningStatusCard
               progressState={lessonProgressState}
@@ -486,194 +487,209 @@ export default function TaskWorkspaceClient({
               onStartAction={handleStageClick}
             />
 
-            {/* Hidden Dev Tools (double-click title to reveal) */}
             {devMode && (
-              <div className="p-3 border border-dashed border-yellow-300 rounded-xl bg-yellow-50/50 dark:bg-yellow-950/10">
-                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-2 uppercase tracking-wider">⚙ Dev Tools</p>
+              <div className="card-base p-3 border-dashed border-warning/30">
+                <p className="uppercase-label text-warning mb-2">Dev Tools</p>
                 <div className="flex flex-wrap gap-1.5">
-                  <button onClick={() => handleManualProgressAction("increase")} className="text-xs px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">+10%</button>
-                  <button onClick={() => handleManualProgressAction("decrease")} className="text-xs px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">-10%</button>
-                  <button onClick={() => handleManualProgressAction("complete")} className="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 hover:opacity-90">Complete</button>
-                  <button onClick={() => handleManualProgressAction("reset")} className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-700 hover:opacity-90">Reset</button>
+                  <button onClick={() => handleManualProgressAction("increase")} className="btn-sm btn-secondary">+10%</button>
+                  <button onClick={() => handleManualProgressAction("decrease")} className="btn-sm btn-secondary">-10%</button>
+                  <button onClick={() => handleManualProgressAction("complete")} className="btn-sm btn-danger">Complete</button>
+                  <button onClick={() => handleManualProgressAction("reset")} className="btn-sm btn-ghost text-destructive">Reset</button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Main content */}
           <div className="flex-1 min-w-0">
-            {activeTab === "Learn" && (
-              <div className="space-y-4 fade-in-panel">
-                {/* 1. Learning Module (always expanded) */}
-                <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <GraduationCap className="w-5 h-5 text-primary" />
-                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">Learning Module</span>
-                      </div>
-                      <h2 className="text-xl font-bold text-foreground mb-2">{task.title}</h2>
-                      <p className="text-muted-foreground text-sm max-w-2xl">{learningContent.overview}</p>
-                    </div>
-                    <div className="hidden lg:block">
-                      <Brain className="w-12 h-12 text-primary/20" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Visual Concept Map (always expanded) */}
-                <section className="rounded-xl border border-border bg-card overflow-hidden">
-                  <div className="px-4 py-3 text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border">
-                    <Eye size={15} /> Visual Concept Map
-                  </div>
-                  <div className="p-4">
-                    {task.visualData ? (
-                      <div className="w-full min-h-75">
-                        <NewVisualRenderer data={task.visualData} />
-                      </div>
-                    ) : hasLearningMaps ? (
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2">
-                          {mapOptions.map((mapOption) => (
-                            <button
-                              key={mapOption.id}
-                              onClick={() => setSelectedPresetId(mapOption.id)}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                selectedPresetId === mapOption.id
-                                  ? "bg-accent text-white shadow-md"
-                                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                              }`}
-                            >
-                              {mapOption.icon} {mapOption.label}
-                            </button>
-                          ))}
+            <AnimatePresence mode="wait">
+              {activeTab === "Learn" && (
+                <motion.div
+                  key="learn"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="space-y-4"
+                >
+                  <div className="bg-accent/5 rounded-xl p-5 border border-accent/10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <GraduationCap className="w-5 h-5 text-accent" />
+                          <span className="uppercase-label text-accent">Learning Module</span>
                         </div>
-                        {selectedMap && selectedVisualType ? (
-                          <OldVisualRenderer data={selectedMap.data} />
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Select a map to view the visualization.</p>
-                        )}
+                        <h2 className="text-xl font-bold text-foreground mb-2">{task.title}</h2>
+                        <p className="caption max-w-2xl">{learningContent.overview}</p>
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No visualization available for this topic.</p>
-                    )}
+                      <div className="hidden lg:block">
+                        <Brain className="w-12 h-12 text-accent/20" />
+                      </div>
+                    </div>
                   </div>
-                </section>
 
-                {/* 3. Key Points (collapsible, default closed) */}
-                {learningContent.keyPoints && learningContent.keyPoints.length > 0 && (
-                  <CollapsibleSection
-                    title="Key Points"
-                    icon={<Target size={15} />}
-                    defaultOpen={false}
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
-                      {learningContent.keyPoints.map((point, idx) => (
-                        <div key={idx} className="flex items-start gap-2 p-3 rounded-lg bg-secondary/50">
-                          <CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" />
-                          <p className="text-sm text-foreground/80">{point}</p>
+                  <section className="card-base overflow-hidden">
+                    <div className="px-4 py-3 text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border">
+                      <Eye size={15} /> Visual Concept Map
+                    </div>
+                    <div className="p-4">
+                      {task.visualData ? (
+                        <div className="w-full min-h-75">
+                          <NewVisualRenderer data={task.visualData} />
                         </div>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
-                )}
-
-                {/* 4. Example (collapsible, default closed) */}
-                {learningContent.example && (
-                  <CollapsibleSection
-                    title="Example"
-                    icon={<Lightbulb size={15} />}
-                    defaultOpen={false}
-                  >
-                    <div className="p-4 rounded-lg bg-accent/5 border border-accent/20 mt-1">
-                      <p className="text-sm text-foreground/80 leading-relaxed">{learningContent.example}</p>
-                    </div>
-                  </CollapsibleSection>
-                )}
-
-                {/* 5. Step by Step (collapsible, default closed) */}
-                {learningContent.steps && learningContent.steps.length > 0 && (
-                  <CollapsibleSection
-                    title="Step by Step"
-                    icon={<ListChecks size={15} />}
-                    defaultOpen={false}
-                  >
-                    <div className="space-y-2 mt-1">
-                      {learningContent.steps.map((step, idx) => (
-                        <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
-                          <div className="shrink-0 w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
-                            {idx + 1}
+                      ) : hasLearningMaps ? (
+                        <div className="space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {mapOptions.map((mapOption) => (
+                              <button
+                                key={mapOption.id}
+                                onClick={() => setSelectedPresetId(mapOption.id)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                  selectedPresetId === mapOption.id
+                                    ? "btn-primary btn-sm"
+                                    : "btn-secondary btn-sm"
+                                }`}
+                              >
+                                {mapOption.icon} {mapOption.label}
+                              </button>
+                            ))}
                           </div>
-                          <p className="text-sm text-foreground/80">{step}</p>
+                          {selectedMap && selectedVisualType ? (
+                            <OldVisualRenderer data={selectedMap.data} />
+                          ) : (
+                            <p className="caption">Select a map to view the visualization.</p>
+                          )}
                         </div>
-                      ))}
+                      ) : (
+                        <p className="caption">No visualization available for this topic.</p>
+                      )}
                     </div>
-                  </CollapsibleSection>
-                )}
+                  </section>
 
-                {/* 6. Pro Tip (collapsible, default closed) */}
-                {learningContent.proTip && (
-                  <CollapsibleSection
-                    title="Pro Tip"
-                    icon={<Sparkles size={15} />}
-                    defaultOpen={false}
-                  >
-                    <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 mt-1">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-300">💡 {learningContent.proTip}</p>
-                    </div>
-                  </CollapsibleSection>
-                )}
+                  {learningContent.keyPoints && learningContent.keyPoints.length > 0 && (
+                    <CollapsibleSection
+                      title="Key Points"
+                      icon={<Target size={15} />}
+                      defaultOpen={false}
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                        {learningContent.keyPoints.map((point, idx) => (
+                          <div key={idx} className="flex items-start gap-2 p-3 rounded-lg bg-secondary/50">
+                            <CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" />
+                            <p className="text-sm text-foreground/80">{point}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleSection>
+                  )}
 
-                <div className="text-center text-xs text-muted-foreground pt-2">
-                  Keep exploring — you're making progress!
-                </div>
-              </div>
-            )}
+                  {learningContent.example && (
+                    <CollapsibleSection
+                      title="Example"
+                      icon={<Lightbulb size={15} />}
+                      defaultOpen={false}
+                    >
+                      <div className="p-4 rounded-lg bg-accent/5 border border-accent/20 mt-1">
+                        <p className="text-sm text-foreground/80 leading-relaxed">{learningContent.example}</p>
+                      </div>
+                    </CollapsibleSection>
+                  )}
 
-            {activeTab === "Practice" && (
-              <div className="fade-in-panel">
-                {!hasPracticeQuestions ? (
-                  <div className="bg-card border border-border rounded-xl shadow-sm">
+                  {learningContent.steps && learningContent.steps.length > 0 && (
+                    <CollapsibleSection
+                      title="Step by Step"
+                      icon={<ListChecks size={15} />}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-2 mt-1">
+                        {learningContent.steps.map((step, idx) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
+                            <div className="shrink-0 w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">
+                              {idx + 1}
+                            </div>
+                            <p className="text-sm text-foreground/80">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleSection>
+                  )}
+
+                  {learningContent.proTip && (
+                    <CollapsibleSection
+                      title="Pro Tip"
+                      icon={<Sparkles size={15} />}
+                      defaultOpen={false}
+                    >
+                      <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 mt-1">
+                        <p className="text-sm text-warning">{learningContent.proTip}</p>
+                      </div>
+                    </CollapsibleSection>
+                  )}
+
+                  <div className="text-center caption pt-2">
+                    Keep exploring — you're making progress!
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "Practice" && (
+                <motion.div
+                  key="practice"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  {!hasPracticeQuestions ? (
+                    <div className="card-base">
                     <EmptyState
                       icon={<Zap size={32} />}
-                      title="No practice content available yet"
-                      description="This task does not include practice questions yet. Check back later or try the Learn section first."
+                      title="Practice questions coming soon"
+                      description="Start with the Learn section first. Practice questions will be generated based on what you learn."
                     />
-                  </div>
-                ) : (
-                  <PracticeMode
-                    questions={practiceQuestions}
-                    subject={taskData.subject}
-                    onComplete={handlePracticeComplete}
-                  />
-                )}
-              </div>
-            )}
+                    </div>
+                  ) : (
+                    <PracticeMode
+                      questions={practiceQuestions}
+                      subject={taskData.subject}
+                      onComplete={handlePracticeComplete}
+                    />
+                  )}
+                </motion.div>
+              )}
 
-            {activeTab === "Master" && (
-              <div className="fade-in-panel">
-                {!hasMasterQuestions ? (
-                  <div className="bg-card border border-border rounded-xl shadow-sm">
+              {activeTab === "Master" && (
+                <motion.div
+                  key="master"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  {!hasMasterQuestions ? (
+                    <div className="card-base">
                     <EmptyState
                       icon={<Trophy size={32} />}
-                      title="No mastery test available yet"
-                      description="This task does not include a mastery test yet. Complete the practice section first."
+                      title="Mastery challenge locked"
+                      description="Complete the Practice section to unlock the Mastery challenge and prove your understanding."
                     />
-                  </div>
-                ) : (
-                  <MasterMode
-                    questions={masterQuestions}
-                    subject={taskData.subject}
-                    timeLimit={30}
-                    onComplete={handleMasterComplete}
-                  />
-                )}
-              </div>
-            )}
+                    </div>
+                  ) : (
+                    <MasterMode
+                      questions={masterQuestions}
+                      subject={taskData.subject}
+                      timeLimit={30}
+                      onComplete={handleMasterComplete}
+                    />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
+      </motion.div>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }
 

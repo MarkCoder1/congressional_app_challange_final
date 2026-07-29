@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TimelineContainer } from "@/components/timeline";
 import { usePlannerStore } from "@/features/planner/store";
 import { usePlanner } from "@/features/planner/hooks/usePlanner";
+import { PageTransition } from "@/components/PageTransition";
 import type { Task } from "@/types/task";
 
 export default function TimelinePage() {
@@ -88,5 +89,9 @@ export default function TimelinePage() {
     };
   }, [setTasks]); // Only depends on stable setTasks reference — runs once on mount
 
-  return <TimelineContainer blocks={blocks} tasks={tasks} loading={loading} />;
+  return (
+    <PageTransition>
+      <TimelineContainer blocks={blocks} tasks={tasks} loading={loading} />
+    </PageTransition>
+  );
 }

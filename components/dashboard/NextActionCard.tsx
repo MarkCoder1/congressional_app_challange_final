@@ -12,7 +12,9 @@ import {
   BookOpen,
   Zap,
   RefreshCw,
+  HelpCircle,
 } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { Task } from "@/types/task";
 import type { TaskPriorityScore } from "@/features/planner/types";
 
@@ -28,20 +30,20 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-br from-green-50 via-card to-card border border-green-200 rounded-3xl p-8 shadow-lg"
+        className="card-base p-6"
       >
         <div className="flex items-center gap-4 mb-2">
-          <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center">
-            <Brain className="text-green-600" size={28} />
+          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Brain className="text-accent" size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-green-700 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-accent uppercase tracking-wider">
               You're all caught up!
             </p>
-            <h3 className="text-2xl font-bold mt-1">No tasks remaining</h3>
+            <h3 className="text-xl font-bold mt-1">No tasks remaining</h3>
           </div>
         </div>
-        <p className="text-muted-foreground mt-4 ml-[4.25rem]">
+        <p className="caption mt-3 ml-[4rem]">
           Create a new task to get started.
         </p>
       </motion.div>
@@ -53,7 +55,6 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
   const daysLeft = getDaysLeft(task.deadline);
   const isOverdue = daysLeft !== null && daysLeft < 0;
 
-  // Generate "Why this task?" reasons from existing data
   const reasons = generateReasons(task, priorityScore, daysLeft);
 
   const taskTypeIcon = getTaskTypeIcon(task.type);
@@ -63,81 +64,78 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="bg-gradient-to-br from-accent/[0.07] via-card to-card border border-accent/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300"
+      className="card-base p-6"
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="w-14 h-14 rounded-2xl bg-accent/15 flex items-center justify-center"
+            className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center"
           >
-            <Brain className="text-accent" size={28} />
+            <Brain className="text-accent" size={24} />
           </motion.div>
-          <div>
-            <p className="text-xs font-semibold text-accent uppercase tracking-[0.15em]">
-              Your Next Best Action
-            </p>
-            <h3 className="text-2xl font-bold mt-1 leading-tight">{task.title}</h3>
-          </div>
+            <div>
+                <div className="flex items-center gap-1.5">
+                  <p className="uppercase-label">
+                    Your Next Best Action
+                  </p>
+                  <Tooltip content="Your most important learning step based on deadlines, difficulty, and priority." side="top">
+                    <HelpCircle size={12} className="text-muted-foreground cursor-help" />
+                  </Tooltip>
+                </div>
+                <h3 className="page-title mt-1">{task.title}</h3>
+              </div>
         </div>
       </div>
 
-      {/* Metadata grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {/* Subject */}
-        <div className="bg-secondary/40 rounded-xl p-3">
-          <p className="text-xs text-muted-foreground mb-1">Subject</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="card-inset">
+          <p className="caption mb-1">Subject</p>
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-accent" />
-            <span className="font-semibold text-sm">{task.subject}</span>
+            <span className="text-sm font-semibold">{task.subject}</span>
           </div>
         </div>
 
-        {/* Type */}
-        <div className="bg-secondary/40 rounded-xl p-3">
-          <p className="text-xs text-muted-foreground mb-1">Type</p>
+        <div className="card-inset">
+          <p className="caption mb-1">Type</p>
           <div className="flex items-center gap-2">
             <span className={`p-1 rounded-md ${taskTypeIcon.color}`}>
               <taskTypeIcon.icon size={16} />
             </span>
-            <span className="font-semibold text-sm capitalize">{task.type}</span>
+            <span className="text-sm font-semibold capitalize">{task.type}</span>
           </div>
         </div>
 
-        {/* Priority */}
-        <div className="bg-secondary/40 rounded-xl p-3">
-          <p className="text-xs text-muted-foreground mb-1">Priority</p>
+        <div className="card-inset">
+          <p className="caption mb-1">Priority</p>
           <div className="flex items-center gap-2">
             <BarChart3 size={16} className={priorityColor} />
-            <span className={`font-semibold text-sm ${priorityColor}`}>
+            <span className={`text-sm font-semibold ${priorityColor}`}>
               {priorityLabel}
             </span>
           </div>
         </div>
 
-        {/* Estimated Duration */}
-        <div className="bg-secondary/40 rounded-xl p-3">
-          <p className="text-xs text-muted-foreground mb-1">Estimated</p>
+        <div className="card-inset">
+          <p className="caption mb-1">Estimated</p>
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-muted-foreground" />
-            <span className="font-semibold text-sm">
+            <span className="text-sm font-semibold">
               {formatMinutes(task.estimatedMinutes ?? 0)}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Deadline + Progress row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Deadline */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div className="flex items-center gap-3 bg-secondary/30 rounded-xl px-4 py-3">
-          <Calendar size={18} className={isOverdue ? "text-red-500" : "text-muted-foreground"} />
+          <Calendar size={18} className={isOverdue ? "text-destructive" : "text-muted-foreground"} />
           <div>
-            <p className="text-xs text-muted-foreground">Deadline</p>
-            <p className={`font-semibold ${isOverdue ? "text-red-600" : ""}`}>
+            <p className="caption">Deadline</p>
+            <p className={`text-sm font-semibold ${isOverdue ? "text-destructive" : ""}`}>
               {task.deadline
                 ? isOverdue
                   ? `Overdue by ${Math.abs(daysLeft!)} days`
@@ -151,30 +149,28 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
           </div>
         </div>
 
-        {/* Progress */}
         <div className="bg-secondary/30 rounded-xl px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground">Progress</p>
+            <p className="caption">Progress</p>
             <p className="text-sm font-bold">{task.progress}%</p>
           </div>
-          <div className="h-2.5 bg-border rounded-full overflow-hidden">
+          <div className="progress-bar">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${task.progress}%` }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-              className="h-full bg-accent rounded-full"
+              className="progress-fill"
             />
           </div>
         </div>
       </div>
 
-      {/* Why This Task? - generated from existing data */}
       {reasons.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.4 }}
-          className="bg-accent/[0.04] border border-accent/10 rounded-2xl p-4 mb-6"
+          className="bg-accent/[0.04] border border-accent/10 rounded-xl p-4 mb-6"
         >
           <p className="text-sm font-semibold text-accent mb-3 flex items-center gap-2">
             <Brain size={16} />
@@ -197,7 +193,6 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
         </motion.div>
       )}
 
-      {/* Action Button */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -205,16 +200,14 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
       >
         <Link
           href={`/task/${task.id}`}
-          className="inline-flex items-center gap-2 bg-accent text-white px-8 py-3.5 rounded-2xl font-semibold hover:bg-accent/90 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+          className="btn-primary inline-flex"
         >
-          Start Learning <ArrowRight size={18} />
+          Start Learning <ArrowRight size={16} />
         </Link>
       </motion.div>
     </motion.div>
   );
 }
-
-/* ─── Helpers ─────────────────────────────────────────── */
 
 function getDaysLeft(deadline?: string): number | null {
   if (!deadline) return null;
@@ -231,20 +224,20 @@ function getPriorityLabel(score: number): string {
 }
 
 function getPriorityColor(score: number): string {
-  if (score >= 90) return "text-red-600";
-  if (score >= 70) return "text-orange-600";
-  if (score >= 40) return "text-blue-600";
-  return "text-gray-500";
+  if (score >= 90) return "text-destructive";
+  if (score >= 70) return "text-warning";
+  if (score >= 40) return "text-accent";
+  return "text-muted-foreground";
 }
 
 function getTaskTypeIcon(type: string) {
   switch (type) {
     case "lesson":
-      return { icon: BookOpen, color: "bg-blue-100 text-blue-700" };
+      return { icon: BookOpen, color: "bg-primary-tint text-primary" };
     case "assignment":
-      return { icon: Zap, color: "bg-purple-100 text-purple-700" };
+      return { icon: Zap, color: "bg-ai-violet-tint text-ai-violet" };
     default:
-      return { icon: RefreshCw, color: "bg-gray-100 text-gray-700" };
+      return { icon: RefreshCw, color: "bg-secondary text-muted-foreground" };
   }
 }
 
@@ -261,48 +254,43 @@ function generateReasons(
 ): Reason[] {
   const reasons: Reason[] = [];
 
-  // Due soon
   if (daysLeft !== null && daysLeft <= 1) {
     reasons.push({
-      label: daysLeft <= 0 ? "⚠ Overdue" : "Due soon",
+      label: daysLeft <= 0 ? "Overdue" : "Due soon",
       icon: <Calendar size={14} />,
-      color: "bg-red-100 text-red-700 border border-red-200",
+      color: "bg-destructive/10 text-destructive",
     });
   }
 
-  // High difficulty
   if (task.difficulty === "hard") {
     reasons.push({
       label: "High difficulty",
       icon: <AlertTriangle size={14} />,
-      color: "bg-orange-100 text-orange-700 border border-orange-200",
+      color: "bg-warning/10 text-warning",
     });
   }
 
-  // Large workload
   if ((task.estimatedMinutes ?? 0) > 90) {
     reasons.push({
       label: "Large workload",
       icon: <Clock size={14} />,
-      color: "bg-purple-100 text-purple-700 border border-purple-200",
+      color: "bg-ai-violet-tint text-ai-violet",
     });
   }
 
-  // High priority score
   if ((priorityScore?.score ?? 0) >= 70) {
     reasons.push({
       label: "High priority",
       icon: <BarChart3 size={14} />,
-      color: "bg-blue-100 text-blue-700 border border-blue-200",
+      color: "bg-accent/10 text-accent",
     });
   }
 
-  // Already started
   if ((task.progress ?? 0) > 0 && (task.progress ?? 0) < 100) {
     reasons.push({
       label: "In progress",
       icon: <RefreshCw size={14} />,
-      color: "bg-green-100 text-green-700 border border-green-200",
+      color: "bg-success/10 text-success",
     });
   }
 

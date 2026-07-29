@@ -18,12 +18,12 @@ export function ProcessFlow({ data }: { data: ProcessFlowData }) {
       {(data.inputs?.length || data.outputs?.length) && (
         <div className="flex flex-wrap gap-3 justify-center">
           {data.inputs?.map((input) => (
-            <span key={input} className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono">
+            <span key={input} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono">
               📥 {input}
             </span>
           ))}
           {data.outputs?.map((output) => (
-            <span key={output} className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-mono">
+            <span key={output} className="px-3 py-1 rounded-full bg-success/10 text-success text-xs font-mono">
               📤 {output}
             </span>
           ))}
@@ -46,7 +46,7 @@ export function ProcessFlow({ data }: { data: ProcessFlowData }) {
                 className="relative flex gap-4 group"
               >
                 {/* Step number circle */}
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center text-white font-bold shadow-lg z-10">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold shadow-lg z-10">
                   {idx + 1}
                 </div>
 

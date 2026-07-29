@@ -9,10 +9,10 @@ interface TodayStudyPlanProps {
 }
 
 const studyTypeConfig = {
-  learn: { icon: BookOpen, color: "text-blue-600 bg-blue-50" },
-  practice: { icon: Zap, color: "text-orange-600 bg-orange-50" },
-  review: { icon: RefreshCw, color: "text-purple-600 bg-purple-50" },
-  work: { icon: Target, color: "text-green-600 bg-green-50" },
+  learn: { icon: BookOpen, color: "text-primary bg-primary-tint" },
+  practice: { icon: Zap, color: "text-warning bg-warning-tint" },
+  review: { icon: RefreshCw, color: "text-ai-violet bg-ai-violet-tint" },
+  work: { icon: Target, color: "text-success bg-success-tint" },
 };
 
 export function TodayStudyPlan({ blocks }: TodayStudyPlanProps) {

@@ -85,7 +85,7 @@ export function TaskProgressCard({
             {completedActivities.map((activity, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400"
+                className="flex items-center gap-2 text-xs text-success dark:text-success"
               >
                 <CheckCircle2 size={12} className="shrink-0" />
                 <span>{activity}</span>

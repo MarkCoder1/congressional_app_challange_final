@@ -9,8 +9,13 @@ import {
   Trophy,
   Calendar,
   Brain,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { PageTransition } from "@/components/PageTransition";
+import { staggerContainer, staggerItem } from "@/lib/animations";
+import { DashboardGreeting } from "@/components/DashboardGreeting";
+import { ContextualHint } from "@/components/ContextualHint";
 import { EmptyState } from "@/components/EmptyState";
 import { usePlanner } from "@/features/planner/hooks/usePlanner";
 import { usePlannerStore } from "@/features/planner/store";
@@ -30,7 +35,6 @@ export default function Dashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // Load tasks from API into the planner store
   const setTasks = usePlannerStore((state) => state.setTasks);
   const planner = usePlanner();
   const { priorityScores } = planner;
@@ -57,7 +61,6 @@ export default function Dashboard() {
         const apiTasksData = data as Task[];
         setApiTasks(apiTasksData);
 
-        // Map API tasks to planner-compatible format and set in store
         const mapTaskType = (
           apiType: string,
         ): "lesson" | "assignment" | "practice" | "review" | "custom" => {
@@ -109,7 +112,6 @@ export default function Dashboard() {
     };
   }, [setTasks]);
 
-  // Use planner priorityScores for ordering (single source of truth)
   const activeTasks = useMemo(() => {
     return apiTasks.filter((t) => (t.progress ?? 0) < 100);
   }, [apiTasks]);
@@ -118,7 +120,6 @@ export default function Dashboard() {
     return apiTasks.filter((t) => (t.progress ?? 0) >= 100);
   }, [apiTasks]);
 
-  // Sort by planner priorityScores (highest first), fallback to progress
   const sortedActiveTasks = useMemo(() => {
     return [...activeTasks].sort((a, b) => {
       const scoreA =
@@ -138,7 +139,6 @@ export default function Dashboard() {
 
   const totalCompleted = completedTasks.length;
 
-  // Helper: Calculate days left
   const getDaysLeft = (deadline?: string) => {
     if (!deadline) return null;
     const due = new Date(deadline);
@@ -150,14 +150,28 @@ export default function Dashboard() {
 
   if (loading)
     return (
-      <div className="p-8 space-y-6 animate-pulse">
-        <div className="h-8 w-64 bg-secondary rounded-lg" />
-        <div className="h-64 bg-secondary rounded-3xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-48 bg-secondary rounded-3xl" />
-          <div className="h-48 bg-secondary rounded-3xl" />
+      <PageTransition>
+        <div className="page-container section-spacing">
+          <div className="h-8 w-64 shimmer rounded-lg" />
+          <div className="space-y-4 mt-6">
+            <div className="h-6 w-48 shimmer rounded" />
+            <div className="h-64 shimmer rounded-xl" />
+          </div>
+          <div className="content-grid mt-6">
+            <div className="content-main space-y-4">
+              <div className="h-8 w-40 shimmer rounded-lg" />
+              <div className="h-48 shimmer rounded-xl" />
+              <div className="h-8 w-40 shimmer rounded-lg" />
+              <div className="h-32 shimmer rounded-xl" />
+            </div>
+            <div className="content-sidebar space-y-4">
+              <div className="h-32 shimmer rounded-xl" />
+              <div className="h-32 shimmer rounded-xl" />
+              <div className="h-48 shimmer rounded-xl" />
+            </div>
+          </div>
         </div>
-      </div>
+      </PageTransition>
     );
 
   if (apiTasks.length === 0) {
@@ -175,207 +189,203 @@ export default function Dashboard() {
   return (
     <>
       <WelcomeScreen onComplete={() => setShowOnboarding(false)} />
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-        {/* Greeting */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8"
-        >
-          <h2 className="text-2xl font-bold">Good morning, Marc</h2>
-          <p className="text-muted-foreground">
-            Here's your learning overview
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ─── Main Area (Left 2/3) ─── */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Next Action Card (Feature 1 + 2) */}
-            <NextActionCard
-              task={nextAction}
-              priorityScore={nextActionPriority}
+      <PageTransition>
+        <div className="page-container">
+          <motion.div
+            variants={staggerItem}
+            initial="initial"
+            animate="animate"
+          >
+            <DashboardGreeting
+              completedToday={totalCompleted}
+              hasTasks={activeTasks.length > 0}
             />
+          </motion.div>
 
-            {/* Up Next - Ordered by Planner Priority */}
-            {upNext.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <h4 className="uppercase text-sm font-semibold tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                  <Brain size={16} />
-                  Up Next
-                </h4>
-                <div className="space-y-3">
-                  {upNext.map((task, idx) => {
-                    const daysLeft = getDaysLeft(task.deadline);
-                    const isOverdue = daysLeft !== null && daysLeft < 0;
-                    const priorityScore = priorityScores.find(
-                      (p) => p.taskId === task.id,
-                    );
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="content-grid"
+          >
+            <div className="content-main">
+              <motion.div variants={staggerItem}>
+                {activeTasks.length > 0 && (
+                  <ContextualHint
+                    message={activeTasks.length === 1 ? "You have 1 task waiting today" : `You have ${activeTasks.length} tasks to work on`}
+                    className="mb-4"
+                  />
+                )}
+                <NextActionCard
+                  task={nextAction}
+                  priorityScore={nextActionPriority}
+                />
+              </motion.div>
 
-                    return (
-                      <motion.div
-                        key={task.id}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          duration: 0.3,
-                          delay: 0.3 + idx * 0.05,
-                        }}
-                      >
-                        <Link
-                          href={`/task/${task.id}`}
-                          className="block group"
-                        >
-                          <div className="bg-card border border-border hover:border-accent/50 rounded-2xl p-5 transition-all hover:shadow-md">
+              {upNext.length > 0 && (
+                <motion.div variants={staggerItem}>
+                  <div className="card-dashboard">
+                    <h4 className="uppercase-label mb-4 flex items-center gap-2">
+                      <Brain size={16} />
+                      Up Next
+                    </h4>
+                    <div className="space-y-3">
+                      {upNext.map((task, idx) => {
+                        const daysLeft = getDaysLeft(task.deadline);
+                        const isOverdue = daysLeft !== null && daysLeft < 0;
+                        const priorityScore = priorityScores.find(
+                          (p) => p.taskId === task.id,
+                        );
+
+                        return (
+                          <motion.div
+                            key={task.id}
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{
+                              duration: 0.3,
+                              delay: idx * 0.05,
+                            }}
+                          >
+                            <Link
+                              href={`/task/${task.id}`}
+                              className="block group"
+                            >
+                              <div className="card-interactive p-4">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1 min-w-0">
+                                    <h5 className="font-semibold group-hover:text-accent truncate">
+                                      {task.title}
+                                    </h5>
+                                    <p className="caption">{task.subject}</p>
+                                  </div>
+                                  <div className="text-right ml-4">
+                                    <span className="font-bold text-accent">
+                                      {task.progress}%
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {priorityScore && (
+                                  <div className="mt-2 metadata">
+                                    Priority:{" "}
+                                    {formatPriorityLabel(priorityScore.score)}
+                                  </div>
+                                )}
+
+                                {task.deadline && (
+                                  <div
+                                    className={`mt-1.5 text-sm flex items-center gap-1.5 ${
+                                      isOverdue
+                                        ? "text-destructive"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    <Calendar size={14} />
+                                    {daysLeft !== null ? (
+                                      isOverdue ? (
+                                        <span>
+                                          Overdue by {Math.abs(daysLeft)} days
+                                        </span>
+                                      ) : daysLeft === 0 ? (
+                                        <span className="font-medium">
+                                          Due today
+                                        </span>
+                                      ) : (
+                                        <span>Due in {daysLeft} days</span>
+                                      )
+                                    ) : (
+                                      <span>
+                                        Deadline:{" "}
+                                        {new Date(
+                                          task.deadline,
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                <div className="progress-bar mt-3">
+                                  <div
+                                    className="progress-fill"
+                                    style={{ width: `${task.progress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {totalCompleted > 0 && (
+                <motion.div variants={staggerItem}>
+                  <div className="card-base overflow-hidden">
+                    <button
+                      onClick={() => setShowCompleted(!showCompleted)}
+                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Trophy className="text-warning" size={20} />
+                        <span className="font-semibold">
+                          Completed Tasks ({totalCompleted})
+                        </span>
+                      </div>
+                      {showCompleted ? (
+                        <ChevronUp size={18} className="text-muted-foreground" />
+                      ) : (
+                        <ChevronDown size={18} className="text-muted-foreground" />
+                      )}
+                    </button>
+                    {showCompleted && (
+                      <div className="p-4 pt-2 space-y-2 max-h-[400px] overflow-auto">
+                        {completedTasks.map((task) => (
+                          <Link
+                            key={task.id}
+                            href={`/task/${task.id}`}
+                            className="block card-interactive p-4"
+                          >
                             <div className="flex justify-between items-start">
                               <div>
-                                <h5 className="font-semibold group-hover:text-accent">
+                                <h5 className="font-medium group-hover:text-accent transition-colors">
                                   {task.title}
                                 </h5>
-                                <p className="text-sm text-muted-foreground">
-                                  {task.subject}
-                                </p>
+                                <p className="caption">{task.subject}</p>
                               </div>
-                              <div className="text-right">
-                                <span className="font-bold text-accent">
-                                  {task.progress}%
-                                </span>
-                              </div>
+                              <div className="badge-success">100%</div>
                             </div>
-
-                            {/* Priority indicator */}
-                            {priorityScore && (
-                              <div className="mt-2 text-xs text-muted-foreground">
-                                Priority:{" "}
-                                {formatPriorityLabel(priorityScore.score)}
-                              </div>
-                            )}
-
-                            {/* Deadline Info */}
-                            {task.deadline && (
-                              <div
-                                className={`mt-1 text-sm flex items-center gap-1.5 ${
-                                  isOverdue
-                                    ? "text-red-600"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                <Calendar size={16} />
-                                {daysLeft !== null ? (
-                                  isOverdue ? (
-                                    <span>
-                                      Overdue by {Math.abs(daysLeft)} days
-                                    </span>
-                                  ) : daysLeft === 0 ? (
-                                    <span className="font-medium">
-                                      Due today
-                                    </span>
-                                  ) : (
-                                    <span>Due in {daysLeft} days</span>
-                                  )
-                                ) : (
-                                  <span>
-                                    Deadline:{" "}
-                                    {new Date(
-                                      task.deadline,
-                                    ).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            <div className="mt-3 h-1.5 bg-secondary rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-accent"
-                                style={{ width: `${task.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Completed Tasks */}
-            {totalCompleted > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-card border border-border rounded-2xl overflow-hidden"
-              >
-                <button
-                  onClick={() => setShowCompleted(!showCompleted)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trophy className="text-yellow-500" size={22} />
-                    <span className="font-semibold">
-                      Completed Tasks ({totalCompleted})
-                    </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {showCompleted ? (
-                    <ChevronUp size={20} />
-                  ) : (
-                    <ChevronDown size={20} />
-                  )}
-                </button>
-                {showCompleted && (
-                  <div className="p-6 pt-2 space-y-3 max-h-[420px] overflow-auto">
-                    {completedTasks.map((task) => (
-                      <Link
-                        key={task.id}
-                        href={`/task/${task.id}`}
-                        className="block bg-secondary/50 hover:bg-secondary rounded-xl p-4 transition-all group"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium group-hover:text-accent transition-colors">
-                              {task.title}
-                            </h5>
-                            <p className="text-sm text-muted-foreground">
-                              {task.subject}
-                            </p>
-                          </div>
-                          <div className="text-green-600 font-semibold">
-                            100%
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                </motion.div>
+              )}
+            </div>
+
+            <div className="content-sidebar">
+              <motion.div variants={staggerItem}>
+                <TodayProgressCard tasks={apiTasks} />
               </motion.div>
-            )}
-          </div>
-
-          {/* ─── Sidebar (Right 1/3) ─── */}
-          <div className="space-y-6">
-            {/* Today's Progress Card (Feature 3) */}
-            <TodayProgressCard tasks={apiTasks} />
-
-            {/* Upcoming Workload (Feature 4) */}
-            <UpcomingWorkload tasks={apiTasks} />
-
-            {/* Quick Actions (Feature 5) */}
-            <QuickActions
-              hasTasks={activeTasks.length > 0}
-              topTaskId={nextAction?.id}
-            />
-
-            {/* Progress History (Phase 10.4) */}
-            <ProgressHistory />
-          </div>
+              <motion.div variants={staggerItem}>
+                <UpcomingWorkload tasks={apiTasks} />
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <QuickActions
+                  hasTasks={activeTasks.length > 0}
+                  topTaskId={nextAction?.id}
+                />
+              </motion.div>
+              {/* <motion.div variants={staggerItem}>
+                <ProgressHistory />
+              </motion.div> */}
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </PageTransition>
     </>
   );
 }

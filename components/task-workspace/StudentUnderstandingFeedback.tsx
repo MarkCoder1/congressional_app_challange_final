@@ -12,21 +12,21 @@ interface StudentUnderstandingFeedbackProps {
 export function StudentUnderstandingFeedback({ feedback }: StudentUnderstandingFeedbackProps) {
   const levelColors = {
     strong: {
-      bg: "bg-green-50 dark:bg-green-950/20",
-      border: "border-green-200 dark:border-green-800",
-      text: "text-green-700 dark:text-green-400",
+      bg: "bg-success-tint dark:bg-success/20",
+      border: "border-success/20 dark:border-success/80",
+      text: "text-success dark:text-success",
       icon: CheckCircle2,
     },
     moderate: {
-      bg: "bg-blue-50 dark:bg-blue-950/20",
-      border: "border-blue-200 dark:border-blue-800",
-      text: "text-blue-700 dark:text-blue-400",
+      bg: "bg-primary-tint dark:bg-primary/20",
+      border: "border-primary/20 dark:border-primary/80",
+      text: "text-primary dark:text-primary",
       icon: AlertCircle,
     },
     needs_review: {
-      bg: "bg-amber-50 dark:bg-amber-950/20",
-      border: "border-amber-200 dark:border-amber-800",
-      text: "text-amber-700 dark:text-amber-400",
+      bg: "bg-reco-tint dark:bg-reco-amber/20",
+      border: "border-reco-amber/20 dark:border-reco-amber/80",
+      text: "text-reco-amber dark:text-reco-amber",
       icon: AlertCircle,
     },
   };
@@ -58,7 +58,7 @@ export function StudentUnderstandingFeedback({ feedback }: StudentUnderstandingF
               <div className="space-y-1">
                 {feedback.strengths.map((s, i) => (
                   <div key={i} className="flex items-start gap-1.5 text-xs text-foreground/80">
-                    <CheckCircle2 size={11} className="text-green-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={11} className="text-success shrink-0 mt-0.5" />
                     <span>{s}</span>
                   </div>
                 ))}
@@ -73,7 +73,7 @@ export function StudentUnderstandingFeedback({ feedback }: StudentUnderstandingF
               <div className="space-y-1">
                 {feedback.needsReview.map((item, i) => (
                   <div key={i} className="flex items-start gap-1.5 text-xs text-foreground/80">
-                    <ArrowRight size={11} className="text-amber-500 shrink-0 mt-0.5" />
+                    <ArrowRight size={11} className="text-reco-amber shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </div>
                 ))}

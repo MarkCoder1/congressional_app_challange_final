@@ -97,7 +97,7 @@ export default function ValidationStage({
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+          <Trophy className="w-16 h-16 mx-auto text-warning mb-4" />
           <h2 className="text-3xl font-bold">Assignment Reviewed!</h2>
           <p className="text-5xl font-bold text-accent mt-4">
             {review.overallScore}/100
@@ -121,7 +121,7 @@ export default function ValidationStage({
           <ul className="space-y-2">
             {review.checklist?.map((item: string, i: number) => (
               <li key={i} className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -171,7 +171,7 @@ export default function ValidationStage({
         </button>
 
         {error && (
-          <p className="text-red-500 text-sm mt-3 flex items-center gap-2">
+          <p className="text-error text-sm mt-3 flex items-center gap-2">
             <AlertCircle size={16} /> {error}
           </p>
         )}

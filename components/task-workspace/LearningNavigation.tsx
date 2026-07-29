@@ -45,7 +45,7 @@ export function LearningNavigation({ stages, onStageClick }: LearningNavigationP
                   ${isActive
                     ? "bg-accent text-white shadow-sm shadow-accent/20"
                     : stage.completed
-                      ? "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/20"
+                      ? "text-success dark:text-success hover:bg-success-tint dark:hover:bg-success/20"
                       : stage.locked
                         ? "text-muted-foreground/30 cursor-not-allowed"
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary"

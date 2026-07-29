@@ -14,7 +14,6 @@ import Link from "next/link";
 import { getTaskById } from "@/lib/storage";
 import { EmptyState } from "@/components/EmptyState";
 
-// --------------------- Type Definitions ---------------------
 interface BreakdownStep {
   number: number;
   title: string;
@@ -44,25 +43,18 @@ interface Task {
   assignments: Assignment[];
 }
 
-// --------------------- Subcomponents ---------------------
 function VisualSupport({ subject }: { subject: string }) {
   if (subject === "Math") {
     return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-        <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+      <div className="bg-accent/5 rounded-lg p-4 border border-accent/20">
+        <h4 className="font-semibold text-accent mb-3 flex items-center gap-2">
           <Lightbulb size={16} />
           Quick Reference: Quadratic Forms
         </h4>
-        <div className="space-y-2 text-sm text-blue-800 font-mono">
-          <div>
-            Standard: <span className="text-blue-600 font-bold">ax² + bx + c = 0</span>
-          </div>
-          <div>
-            Vertex: <span className="text-blue-600 font-bold">a(x - h)² + k = 0</span>
-          </div>
-          <div>
-            Factored: <span className="text-blue-600 font-bold">a(x - r₁)(x - r₂) = 0</span>
-          </div>
+        <div className="space-y-2 text-sm text-accent font-mono">
+          <div>Standard: <span className="font-bold">ax² + bx + c = 0</span></div>
+          <div>Vertex: <span className="font-bold">a(x - h)² + k = 0</span></div>
+          <div>Factored: <span className="font-bold">a(x - r₁)(x - r₂) = 0</span></div>
         </div>
       </div>
     );
@@ -71,22 +63,19 @@ function VisualSupport({ subject }: { subject: string }) {
   return null;
 }
 
-// --------------------- Main Component ---------------------
 export default function AssignmentWorkspace({ params }: { params: { id: string } }) {
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [expandedSteps, setExpandedSteps] = useState<number[]>([]);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [completedQuestions, setCompletedQuestions] = useState<Set<string>>(new Set());
 
-  // Cast the result of getTaskById to Task | undefined
   const task = useMemo(() => getTaskById(params.id) as Task | undefined, [params.id]);
   const assignment = task?.assignments?.[0];
 
-  // Early return if no assignment or no questions
   if (!assignment || assignment.questions.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-sm">
+        <div className="w-full max-w-2xl">
           <EmptyState
             icon={<BookOpen size={32} />}
             title="No task found"
@@ -103,11 +92,10 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
   const totalQuestions = assignment.questions.length;
   const progress = Math.round(((currentQuestionIdx + 1) / totalQuestions) * 100);
 
-  // Guard against missing currentQuestion (should not happen if idx is valid)
   if (!currentQuestion) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-sm">
+        <div className="card-base p-6">
           <p className="text-center text-muted-foreground">Question not found</p>
         </div>
       </div>
@@ -149,51 +137,46 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* LEFT PANEL - Assignment Overview */}
       <div className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card p-6 flex flex-col gap-6">
-        <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+        <Link href="/" className="caption hover:text-foreground transition-colors">
           ← Back
         </Link>
 
         <div>
           <h1 className="text-2xl font-bold mb-3 text-foreground">{assignment.title}</h1>
           <div className="inline-block mb-4">
-            <span className="px-3 py-1.5 bg-accent/10 text-accent font-semibold text-sm rounded-lg">
-              {task?.subject ?? "Math"}
-            </span>
+            <span className="badge-accent">{task?.subject ?? "Math"}</span>
           </div>
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 caption">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar size={16} />
+              <Calendar size={14} />
               <span>Due: {task?.deadline ?? "TBD"}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <BookOpen size={16} />
+              <BookOpen size={14} />
               <span>{totalQuestions} Questions</span>
             </div>
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Overall Progress</span>
             <span className="text-sm font-semibold text-accent">{progress}%</span>
           </div>
-          <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+          <div className="progress-bar">
             <div
-              className="h-full bg-accent rounded-full transition-all duration-500"
+              className="progress-fill"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="caption mt-2">
             {completedQuestions.size} of {totalQuestions} completed
           </p>
         </div>
 
-        {/* Question Summary */}
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold uppercase text-muted-foreground">Questions</h3>
+          <h3 className="uppercase-label">Questions</h3>
           <div className="space-y-1">
             {assignment.questions.map((q: Question, idx: number) => (
               <button
@@ -202,11 +185,11 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                   setCurrentQuestionIdx(idx);
                   setExpandedSteps([]);
                 }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:-translate-y-0.5 ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                   currentQuestionIdx === idx
                     ? "bg-accent text-white font-medium"
                     : completedQuestions.has(q.id)
-                    ? "bg-green-100 text-green-900"
+                    ? "badge-success"
                     : "bg-secondary hover:bg-secondary/80"
                 }`}
               >
@@ -221,9 +204,7 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
         </div>
       </div>
 
-      {/* RIGHT PANEL - Main Workspace */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <div className="border-b border-border bg-card px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
@@ -233,14 +214,14 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
               <button
                 onClick={handlePrevious}
                 disabled={currentQuestionIdx === 0}
-                className="p-2 rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+                className="btn-ghost btn-icon"
               >
                 <ChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNext}
                 disabled={currentQuestionIdx === totalQuestions - 1}
-                className="p-2 rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+                className="btn-ghost btn-icon"
               >
                 <ChevronRight size={20} />
               </button>
@@ -248,13 +229,11 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-auto">
           <div className="p-6 space-y-6 fade-in-panel">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Question Area */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="card-base rounded-xl p-6 shadow-sm">
+                <div className="card-base p-6">
                   <h3 className="text-lg font-semibold mb-4 text-foreground">
                     {currentQuestion.category}
                   </h3>
@@ -266,7 +245,7 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Your Answer</label>
+                    <label className="form-label mb-2 block">Your Answer</label>
                     <input
                       type="text"
                       value={userAnswers[currentQuestion.id] || ""}
@@ -277,16 +256,16 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                         })
                       }
                       placeholder="Enter your answer..."
-                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-200"
+                      className="input-base"
                     />
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <button onClick={handleSubmit} className="w-full btn-primary">
+                    <button onClick={handleSubmit} className="btn-primary w-full">
                       Submit Answer
                     </button>
                     {currentQuestion.hint && (
-                      <button className="w-full btn-secondary flex items-center justify-center gap-2">
+                      <button className="btn-secondary w-full flex items-center justify-center gap-2">
                         <Lightbulb size={18} />
                         Show Hint
                       </button>
@@ -295,13 +274,13 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                 </div>
 
                 {currentQuestion.breakdownSteps && (
-                  <div className="card-base rounded-xl p-6 shadow-sm">
+                  <div className="card-base p-6">
                     <h3 className="text-lg font-semibold mb-4 text-foreground">
                       Step-by-Step Guidance
                     </h3>
                     <div className="space-y-2">
                       {currentQuestion.breakdownSteps.map((step: BreakdownStep) => (
-                        <div key={step.number} className="border border-border rounded-lg overflow-hidden">
+                        <div key={step.number} className="card-base overflow-hidden">
                           <button
                             onClick={() => toggleStep(step.number)}
                             className="w-full px-4 py-4 text-left font-medium hover:bg-secondary/30 transition-all duration-200 flex items-center justify-between"
@@ -314,7 +293,7 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                             </div>
                             <ChevronDown
                               size={20}
-                              className={`transition-transform ${
+                              className={`text-muted-foreground transition-transform ${
                                 expandedSteps.includes(step.number) ? "rotate-180" : ""
                               }`}
                             />
@@ -328,24 +307,17 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                                 </p>
                               </div>
                               {step.example && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 font-mono text-sm">
-                                  <p className="text-xs font-semibold text-blue-900 mb-2">
-                                    Example:
-                                  </p>
-                                  <p className="text-blue-800">{step.example}</p>
+                                <div className="bg-accent/5 border border-accent/20 rounded-lg p-3 font-mono text-sm">
+                                  <p className="uppercase-label text-accent mb-2">Example:</p>
+                                  <p className="text-foreground">{step.example}</p>
                                 </div>
                               )}
                               {step.keyPoint && (
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-3">
-                                  <Lightbulb
-                                    size={16}
-                                    className="text-yellow-600 flex-shrink-0 mt-0.5"
-                                  />
+                                <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex gap-3">
+                                  <Lightbulb size={16} className="text-warning flex-shrink-0 mt-0.5" />
                                   <div>
-                                    <p className="text-xs font-semibold text-yellow-900 mb-1">
-                                      Key Point
-                                    </p>
-                                    <p className="text-sm text-yellow-800">{step.keyPoint}</p>
+                                    <p className="uppercase-label text-warning mb-1">Key Point</p>
+                                    <p className="text-sm text-warning">{step.keyPoint}</p>
                                   </div>
                                 </div>
                               )}
@@ -358,19 +330,16 @@ export default function AssignmentWorkspace({ params }: { params: { id: string }
                 )}
               </div>
 
-              {/* Right Side Panel - Visual Support */}
               <div className="lg:col-span-1">
                 <div className="sticky top-6 space-y-4">
                   <VisualSupport subject={task?.subject ?? "Math"} />
 
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm">
+                  <div className="bg-success/10 border border-success/30 rounded-lg p-4">
                     <div className="flex gap-3">
-                      <AlertCircle size={16} className="text-green-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle size={16} className="text-success flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-semibold text-green-900 mb-2">
-                          Expected Answer
-                        </p>
-                        <p className="text-sm text-green-800 font-mono">
+                        <p className="uppercase-label text-success mb-2">Expected Answer</p>
+                        <p className="text-sm text-success font-mono">
                           {currentQuestion.expectedAnswer}
                         </p>
                       </div>

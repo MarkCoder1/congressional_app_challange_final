@@ -10,10 +10,10 @@ interface StudyBlockProps {
 }
 
 const studyTypeConfig = {
-  learn: { icon: "📚", color: "bg-blue-50 border-blue-200 text-blue-900", badge: "bg-blue-100 text-blue-700" },
-  practice: { icon: "⚡", color: "bg-green-50 border-green-200 text-green-900", badge: "bg-green-100 text-green-700" },
-  review: { icon: "🔄", color: "bg-orange-50 border-orange-200 text-orange-900", badge: "bg-orange-100 text-orange-700" },
-  work: { icon: "🎯", color: "bg-purple-50 border-purple-200 text-purple-900", badge: "bg-purple-100 text-purple-700" },
+  learn: { icon: "📚", color: "bg-primary-tint border-primary/20 text-primary", badge: "bg-primary-tint text-primary" },
+  practice: { icon: "⚡", color: "bg-success-tint border-success/20 text-success", badge: "bg-success-tint text-success" },
+  review: { icon: "🔄", color: "bg-reco-tint border-reco-amber/20 text-reco-amber", badge: "bg-reco-tint text-reco-amber" },
+  work: { icon: "🎯", color: "bg-ai-violet-tint border-ai-violet/20 text-ai-violet", badge: "bg-ai-violet-tint text-ai-violet" },
 };
 
 export function StudyBlock({ block, onClick }: StudyBlockProps) {
@@ -25,7 +25,7 @@ export function StudyBlock({ block, onClick }: StudyBlockProps) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={`${config.color} border rounded-xl p-3 cursor-pointer transition-all shadow-sm overflow-hidden h-full flex flex-col`}
+      className={`${config.color} border rounded-xl p-3 cursor-pointer transition-all shadow-sm overflow-hidden h-full flex flex-col hover:shadow-md active:scale-[0.98]`}
     >
       <div className="flex items-start justify-between mb-1.5 flex-shrink-0">
         <span className="text-lg leading-none">{config.icon}</span>
@@ -43,7 +43,7 @@ export function StudyBlock({ block, onClick }: StudyBlockProps) {
 
       <div className="space-y-0.5 text-[10px] flex-shrink-0">
         <div className="flex items-center gap-1">
-          <span className="font-semibold">⏱️ {block.duration} min</span>
+          <span className="font-semibold">{block.duration} min</span>
         </div>
         <p className="opacity-75 line-clamp-1 leading-relaxed overflow-hidden text-ellipsis">{block.reason}</p>
       </div>

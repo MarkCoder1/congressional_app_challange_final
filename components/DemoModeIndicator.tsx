@@ -11,9 +11,9 @@ export function DemoModeIndicator() {
       transition={{ duration: 0.3, delay: 0.5 }}
       className="fixed top-4 right-4 z-40"
     >
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full text-xs font-medium text-accent backdrop-blur-sm">
-        <Sparkles size={12} />
-        <span>Demo Mode</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-secondary/80 border border-border rounded-md text-xs font-medium text-muted-foreground backdrop-blur-sm">
+        <Sparkles size={11} className="text-accent" />
+        <span>Demo Environment</span>
       </div>
     </motion.div>
   );

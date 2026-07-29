@@ -1,11 +1,9 @@
-/**
- * Empty State Component
- * Shows when there are no tasks, assignments, or timeline items
- */
+"use client";
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 interface EmptyStateProps {
   icon: ReactNode;
@@ -23,24 +21,40 @@ export function EmptyState({
   actionHref = "/create-task",
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 lg:py-24 px-4">
-      <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-6 text-muted-foreground">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="flex flex-col items-center justify-center py-16 lg:py-24 px-4"
+    >
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
+        className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-6"
+      >
         {icon}
-      </div>
+      </motion.div>
       <h3 className="text-xl font-semibold text-foreground mb-3 text-center">
         {title}
       </h3>
-      <p className="text-sm text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
+      <p className="caption text-center mb-8 max-w-md">
         {description}
       </p>
       {actionHref && (
-        <Link href={actionHref}>
-          <button className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-xl hover:opacity-90 transition-all duration-200 font-medium text-sm shadow-md shadow-accent/20 hover:shadow-lg active:scale-[0.98]">
-            <Plus size={18} />
-            {actionLabel}
-          </button>
-        </Link>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+        >
+          <Link href={actionHref}>
+            <button className="btn-primary">
+              <Plus size={18} />
+              {actionLabel}
+            </button>
+          </Link>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

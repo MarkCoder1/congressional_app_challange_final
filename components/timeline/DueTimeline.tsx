@@ -15,7 +15,6 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
 
-  // Calculate date ranges
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
@@ -24,7 +23,6 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
   weekEnd.setDate(weekEnd.getDate() + 7);
   const weekEndStr = weekEnd.toISOString().split("T")[0];
 
-  // Categorize tasks - only incomplete tasks with deadlines
   const overdueTasks = tasks.filter((task) => {
     if (!task.deadline) return false;
     if (isTaskCompleted(task)) return false;
@@ -60,21 +58,6 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
     return diffDays;
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-700 border-red-200";
-      case "high":
-        return "bg-orange-100 text-orange-700 border-orange-200";
-      case "medium":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "low":
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
-
   const renderTaskCard = (task: PlannerTask, showDaysLate = false) => {
     const daysLate = showDaysLate ? getDaysLate(task.deadline!) : 0;
     const deadlineDate = task.deadline ? new Date(task.deadline) : null;
@@ -89,8 +72,7 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
         key={task.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.02 }}
-        className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
+        className="card-hover p-4"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
@@ -100,14 +82,14 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
             >
               {task.title}
             </Link>
-            <p className="text-xs text-muted-foreground mt-1">{task.subject}</p>
+            <p className="caption mt-1">{task.subject}</p>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-md border ${getPriorityColor(task.priority)}`}>
+          <span className={`badge capitalize ${task.priority === "urgent" || task.priority === "high" ? "badge-destructive" : "badge-default"}`}>
             {task.priority}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 caption">
           {deadlineStr && (
             <div className="flex items-center gap-1">
               <CalendarX size={14} />
@@ -115,7 +97,7 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
             </div>
           )}
           {showDaysLate && daysLate > 0 && (
-            <div className="flex items-center gap-1 text-red-600 font-semibold">
+            <div className="flex items-center gap-1 text-destructive font-semibold">
               <AlertTriangle size={14} />
               <span>{daysLate} day{daysLate > 1 ? "s" : ""} late</span>
             </div>
@@ -138,7 +120,7 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card border border-border rounded-xl p-12 text-center"
+        className="card-base p-12 text-center"
       >
         <CalendarX size={48} className="text-muted-foreground mx-auto mb-4" />
         <h3 className="text-xl font-bold text-foreground mb-2">All caught up!</h3>
@@ -154,11 +136,10 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Overdue Section */}
       {overdueTasks.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="text-red-500" size={20} />
+            <AlertTriangle className="text-destructive" size={20} />
             <h3 className="text-lg font-bold text-foreground">
               Overdue ({overdueTasks.length})
             </h3>
@@ -169,11 +150,10 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
         </div>
       )}
 
-      {/* Due Tomorrow */}
       {dueTomorrow.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="text-orange-500" size={20} />
+            <Clock className="text-warning" size={20} />
             <h3 className="text-lg font-bold text-foreground">
               Due Tomorrow ({dueTomorrow.length})
             </h3>
@@ -184,11 +164,10 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
         </div>
       )}
 
-      {/* Due This Week */}
       {dueThisWeek.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <CalendarX className="text-blue-500" size={20} />
+            <CalendarX className="text-accent" size={20} />
             <h3 className="text-lg font-bold text-foreground">
               Due This Week ({dueThisWeek.length})
             </h3>
@@ -199,11 +178,10 @@ export function DueTimeline({ tasks, onBlockClick }: DueTimelineProps) {
         </div>
       )}
 
-      {/* Due Later */}
       {dueLater.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <CalendarX className="text-gray-500" size={20} />
+            <CalendarX className="text-muted-foreground" size={20} />
             <h3 className="text-lg font-bold text-foreground">
               Due Later ({dueLater.length})
             </h3>

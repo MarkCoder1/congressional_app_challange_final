@@ -128,7 +128,7 @@ export function AssignmentModal({
                     {questions.length > 1 && (
                       <button
                         onClick={() => removeQuestion(idx)}
-                        className="text-red-600 hover:text-red-700 transition-colors"
+                        className="text-error hover:text-error transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>

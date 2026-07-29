@@ -10,7 +10,7 @@ export function DashboardSkeleton() {
       {/* Next Action Skeleton */}
       <div className="space-y-4">
         <Skeleton height="h-5" width="w-32" />
-        <div className="bg-gradient-to-br from-secondary via-secondary/50 to-secondary border border-border rounded-2xl p-6 lg:p-8 space-y-4 animate-pulse">
+        <div className="bg-card border border-border rounded-2xl p-6 lg:p-8 space-y-4">
           <Skeleton height="h-6" width="w-2/3" />
           <Skeleton height="h-4" width="w-full" />
           <div className="flex gap-3 pt-4">
@@ -29,7 +29,7 @@ export function DashboardSkeleton() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-card border border-border rounded-lg p-4 space-y-3 animate-pulse"
+                className="bg-card border border-border rounded-lg p-4 space-y-3"
               >
                 <Skeleton height="h-4" width="w-2/3" />
                 <Skeleton height="h-3" width="w-1/2" />

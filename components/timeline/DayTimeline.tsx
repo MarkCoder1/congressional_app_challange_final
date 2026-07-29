@@ -12,7 +12,7 @@ interface DayTimelineProps {
 }
 
 export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineProps) {
-  const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8 AM to 10 PM
+  const hours = Array.from({ length: 15 }, (_, i) => i + 8);
 
   const formatHour = (hour: number) => {
     if (hour === 12) return "12 PM";
@@ -20,21 +20,16 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
     return `${hour - 12} PM`;
   };
 
-  // Filter blocks by selected date if provided
   const selectedDateStr = selectedDate ? formatPlannerDateKey(selectedDate) : undefined;
   const filteredBlocks = selectedDateStr
     ? blocks.filter((block) => block.date === selectedDateStr)
     : blocks;
 
-  // Sort blocks by date (they only have date, not time)
   const sortedBlocks = [...filteredBlocks].sort((a, b) => a.date.localeCompare(b.date));
 
-  // Calculate cumulative positions to prevent overlap.
-  // Each block's height is proportional to its duration (minutes).
-  // Blocks are stacked vertically with a small gap between them.
-  const BLOCK_GAP = 16; // px gap between blocks
-  const MIN_HEIGHT = 80; // minimum card height in px
-  const PX_PER_HOUR = 80; // pixels per hour of study time
+  const BLOCK_GAP = 16;
+  const MIN_HEIGHT = 80;
+  const PX_PER_HOUR = 80;
 
   const blockPositions: { topPosition: number; blockHeight: number }[] = [];
   let cumulativeTop = 0;
@@ -45,23 +40,20 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
     cumulativeTop += blockHeight + BLOCK_GAP;
   }
 
-  // Total height needed for the container
-  const containerHeight = cumulativeTop > 0 ? cumulativeTop : 384; // 384 = 16 * 24 (default empty height)
+  const containerHeight = cumulativeTop > 0 ? cumulativeTop : 384;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg"
+      className="card-base overflow-hidden"
     >
       <div className="overflow-x-auto">
         <div className="min-w-full">
-          {/* Timeline Container */}
           <div className="flex">
-            {/* Time Labels Column */}
             <div className="w-20 flex-shrink-0 border-r border-border bg-gradient-to-b from-secondary/40 to-secondary/20">
-              <div className="h-16" /> {/* Spacer for header alignment */}
+              <div className="h-16" />
               {hours.map((hour) => (
                 <div
                   key={hour}
@@ -72,9 +64,7 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
               ))}
             </div>
 
-            {/* Timeline Grid Column */}
             <div className="flex-1 relative bg-gradient-to-b from-background to-secondary/5">
-              {/* Grid Background */}
               <div className="absolute inset-0 pointer-events-none">
                 {hours.map((_, idx) => (
                   <div
@@ -84,7 +74,6 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
                 ))}
               </div>
 
-              {/* Current Time Indicator */}
               {(() => {
                 const now = new Date();
                 const currentHour = now.getHours();
@@ -97,8 +86,8 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
                       style={{ top: `${64 + topPosition}px` }}
                     >
                       <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-red-500 -ml-1.5 relative z-10" />
-                        <div className="flex-1 h-0.5 bg-red-500" />
+                        <div className="w-3 h-3 rounded-full bg-destructive -ml-1.5 relative z-10" />
+                        <div className="flex-1 h-0.5 bg-destructive" />
                       </div>
                     </div>
                   );
@@ -106,7 +95,6 @@ export function DayTimeline({ blocks, selectedDate, onBlockClick }: DayTimelineP
                 return null;
               })()}
 
-              {/* Task Blocks Container - Stacked vertically with cumulative positioning */}
               <div
                 className="relative overflow-hidden"
                 style={{ height: `${containerHeight}px` }}

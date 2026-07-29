@@ -45,7 +45,7 @@ export function ResearchItemCard({ item, isSummarizing, onDelete, onAddTag }: Re
             </button>
           </div>
         </div>
-        <button onClick={() => onDelete(item.id)} className="text-muted-foreground hover:text-red-500">
+        <button onClick={() => onDelete(item.id)} className="text-muted-foreground hover:text-error">
           <X size={16} />
         </button>
       </div>

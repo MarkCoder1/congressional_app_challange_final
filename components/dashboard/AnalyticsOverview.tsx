@@ -17,22 +17,22 @@ export function AnalyticsOverview({ analytics }: AnalyticsOverviewProps) {
       className="grid grid-cols-2 md:grid-cols-4 gap-4"
     >
       <StatCard
-        icon={<Trophy size={20} className="text-yellow-600" />}
+        icon={<Trophy size={20} className="text-warning" />}
         label="Completed"
         value={analytics.completionRate?.value != null ? `${Math.round(analytics.completionRate.value)}%` : "0%"}
       />
       <StatCard
-        icon={<Timer size={20} className="text-blue-600" />}
+        icon={<Timer size={20} className="text-primary" />}
         label="Study Hours"
         value={analytics.studyHours?.value != null ? `${analytics.studyHours.value.toFixed(1)}h` : "0h"}
       />
       <StatCard
-        icon={<Gauge size={20} className="text-green-600" />}
+        icon={<Gauge size={20} className="text-success" />}
         label="Avg Mastery"
         value={analytics.masteryPerformance?.value != null ? `${Math.round(analytics.masteryPerformance.value)}%` : "N/A"}
       />
       <StatCard
-        icon={<Flame size={20} className="text-orange-600" />}
+        icon={<Flame size={20} className="text-warning" />}
         label="Streak"
         value={`${analytics.streak?.current ?? 0} days`}
       />
