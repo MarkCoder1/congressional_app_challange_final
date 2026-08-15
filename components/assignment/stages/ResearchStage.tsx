@@ -73,10 +73,10 @@ export function ResearchStage({
         </div>
       </div>
       <div className="flex justify-between gap-3">
-        <button onClick={onPrev} className="btn-secondary flex items-center gap-1">
+        <button onClick={onPrev} className="btn-secondary flex items-center gap-1 hover:cursor-pointer">
           <ChevronLeft size={16} /> Back
         </button>
-        <button onClick={onNext} className="btn-primary flex items-center gap-2">
+        <button onClick={onNext} className="btn-primary flex items-center gap-2 hover:cursor-pointer">
           Continue to Execution →
         </button>
       </div>

@@ -20,7 +20,7 @@ export function PlanStage({ assignment, completedSteps, onToggleStep, onPrev, on
             key={step.id}
             className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-accent/30 transition"
           >
-            <button onClick={() => onToggleStep(step.id)} className="flex-shrink-0 mt-0.5">
+            <button onClick={() => onToggleStep(step.id)} className="flex-shrink-0 mt-0.5 hover:cursor-pointer">
               {completedSteps[step.id] ? (
                 <CheckCircle2 className="w-5 h-5 text-success" />
               ) : (
@@ -38,7 +38,7 @@ export function PlanStage({ assignment, completedSteps, onToggleStep, onPrev, on
         <button onClick={onPrev} className="btn-secondary flex items-center gap-1">
           <ChevronLeft size={16} /> Back
         </button>
-        <button onClick={onNext} className="btn-primary flex items-center gap-2">
+        <button onClick={onNext} className="btn-primary flex items-center gap-2 hover:cursor-pointer">
           Continue to Research →
         </button>
       </div>

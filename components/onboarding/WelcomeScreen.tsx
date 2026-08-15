@@ -19,7 +19,7 @@ interface WelcomeScreenProps {
 
 const STEPS = [
   {
-    title: "Welcome to StudyFlow AI",
+    title: "Welcome to StudyFlow",
     description:
       "Your personal learning system that helps you plan, understand, practice, and master concepts.",
     illustration: "sparkles",

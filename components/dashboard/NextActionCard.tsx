@@ -64,7 +64,7 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="card-base p-6"
+      className="card-base p-4 sm:p-6"
     >
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -90,7 +90,7 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-6">
         <div className="card-inset">
           <p className="caption mb-1">Subject</p>
           <div className="flex items-center gap-2">
@@ -200,7 +200,7 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
       >
         <Link
           href={`/task/${task.id}`}
-          className="btn-primary inline-flex"
+          className="btn-primary w-full sm:w-auto inline-flex"
         >
           Start Learning <ArrowRight size={16} />
         </Link>

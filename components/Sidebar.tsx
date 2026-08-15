@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -117,32 +118,30 @@ export function Sidebar() {
     <div className="flex flex-col h-full overflow-y-auto bg-sidebar border-r border-border">
       <div className={`px-4 py-5 border-b border-border`}>
         <div className={`flex ${isExpanded ? "justify-start px-2" : "justify-center"}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-              <button
-                onClick={() => (window.location.href = '/')}
-                aria-label="Home"
-                className="text-white font-bold text-sm hover:cursor-pointer"
-              >
-                SF
-              </button>
-            </div>
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image
+              src="/brand/logo.svg"
+              alt="StudyFlow"
+              width={28}
+              height={28}
+              className="shrink-0"
+              priority
+            />
             {isExpanded && (
-              <div className="transition-opacity duration-200">
-                <h1 className="font-bold text-base text-foreground whitespace-nowrap">StudyFlow AI</h1>
-                <p className="caption whitespace-nowrap">Learn better</p>
-              </div>
+              <span className="font-semibold text-base text-foreground whitespace-nowrap">
+                StudyFlow
+              </span>
             )}
-          </div>
+          </Link>
         </div>
       </div>
 
-      <div className={`px-4 py-2 ${isExpanded ? "" : "flex justify-center"}`}>
+      <div className={`hidden lg:block px-4 py-2 ${isExpanded ? "" : "flex justify-center"}`}>
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleExpanded}
-          className="w-full text-muted-foreground"
+          className="w-full text-muted-foreground hover:cursor-pointer touch-target-sm"
         >
           {isExpanded ? (
             <>
@@ -163,7 +162,7 @@ export function Sidebar() {
             return (
               <Link key={item.href} href={item.href} onClick={closeMobile}>
                 <button
-                  className={`sidebar-link w-full ${active ? "active" : ""} ${!isExpanded && "justify-center px-0"}`}
+                  className={`hover:cursor-pointer sidebar-link w-full ${active ? "active" : ""} ${!isExpanded && "justify-center px-0"}`}
                 >
                   <Icon size={20} className="flex-shrink-0" />
                   {isExpanded && <span>{item.label}</span>}
@@ -221,7 +220,7 @@ export function Sidebar() {
                     return (
                       <Link key={task.id} href={`/task/${task.id}`} onClick={closeMobile}>
                         <button
-                          className={`sidebar-task-item ${activeTask ? "active" : ""}`}
+                          className={` hover:cursor-pointer sidebar-task-item ${activeTask ? "active" : ""}`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -250,7 +249,7 @@ export function Sidebar() {
         <div className="space-y-1">
           <button
             onClick={() => toggleSection("assignments")}
-            className={`sidebar-section-header ${
+            className={`hover:cursor-pointer sidebar-section-header ${
               isExpanded ? "justify-between" : "justify-center"
             }`}
           >
@@ -324,7 +323,7 @@ export function Sidebar() {
 
       <div className="px-4 py-3 border-t border-border">
         <Link href="/create-task" onClick={closeMobile}>
-          <Button variant="default" className="w-full">
+          <Button variant="default" className="w-full hover:cursor-pointer">
             <Plus size={18} />
             {isExpanded && <span>New Task</span>}
           </Button>

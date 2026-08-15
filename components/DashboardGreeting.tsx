@@ -47,7 +47,7 @@ export function DashboardGreeting({ completedToday = 0, hasTasks = true }: Dashb
           <Icon size={22} className="text-accent" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold">{greeting.text}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">{greeting.text}</h2>
           {message && (
             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
               <Sparkles size={14} className="text-warning" />

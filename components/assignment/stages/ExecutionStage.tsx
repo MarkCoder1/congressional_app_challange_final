@@ -134,7 +134,7 @@ export function ExecutionStage({
         <button onClick={onPrev} className="btn-secondary flex items-center gap-1">
           <ChevronLeft size={16} /> Back
         </button>
-        <button onClick={onNext} className="btn-primary flex items-center gap-2">
+        <button onClick={onNext} className="btn-primary flex items-center gap-2 hover:cursor-pointer">
           Go to Checkpoints →
         </button>
       </div>

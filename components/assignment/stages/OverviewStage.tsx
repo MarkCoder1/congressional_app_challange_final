@@ -27,7 +27,7 @@ export function OverviewStage({ assignment, onNext }: OverviewStageProps) {
           ))}
         </ul>
       </div>
-      <button onClick={onNext} className="btn-primary w-full flex items-center justify-center gap-2">
+      <button onClick={onNext} className="btn-primary w-full flex items-center justify-center gap-2 hover:cursor-pointer">
         Start Plan →
       </button>
     </div>

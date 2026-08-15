@@ -68,7 +68,7 @@ export function TodayProgressCard({
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <div className="card-stat">
+        {/* <div className="card-stat">
           <div className="flex items-center gap-1.5 mb-1">
             <Clock size={14} className="text-muted-foreground" />
             <span className="metadata">Study Time</span>
@@ -78,8 +78,8 @@ export function TodayProgressCard({
               ? `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`
               : "—"}
           </p>
-        </div>
-        <div className="card-stat">
+        </div> */}
+        {/* <div className="card-stat">
           <div className="flex items-center gap-1.5 mb-1">
             <Brain size={14} className="text-muted-foreground" />
             <span className="metadata">Focus Sessions</span>
@@ -87,7 +87,7 @@ export function TodayProgressCard({
           <p className="font-bold text-base">
             {focusSessions > 0 ? focusSessions : "—"}
           </p>
-        </div>
+        </div> */}
         <div className="card-stat">
           <div className="flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} className="text-success" />

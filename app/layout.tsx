@@ -5,7 +5,9 @@ import { DemoDataInitializer } from "@/components/DemoDataInitializer";
 import { DemoModeIndicator } from "@/components/DemoModeIndicator";
 import { ToastProvider } from "@/components/Toast";
 import { SidebarProvider } from "@/hooks/useSidebar";
+import { OnboardingShortcutListener } from "@/components/OnboardingShortcutListener";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -13,8 +15,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: { default: "StudyFlow AI", template: "%s | StudyFlow AI" },
-  description: "Intelligent learning operating system for students",
+  title: { default: "StudyFlow", template: "%s | StudyFlow" },
+  description: "AI-powered academic learning platform",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -27,6 +33,9 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} scroll-smooth`}
     >
+      <head>
+        <Analytics />
+      </head>
       <body className="bg-background text-foreground antialiased">
         <a
           href="#main-content"
@@ -35,6 +44,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <DemoDataInitializer />
+        <OnboardingShortcutListener />
         <SidebarProvider>
           <ToastProvider>
             <DashboardLayout>{children}</DashboardLayout>

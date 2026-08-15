@@ -12,15 +12,17 @@ import {
   Clock,
   Calendar,
   Sparkles,
-  GraduationCap,
   Briefcase,
   Target,
   ScrollText,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import type { TaskType, TaskDifficulty } from "@/types/task";
 import { SubjectPicker } from "./SubjectPicker";
 import type { Subject } from "@/lib/types";
+import { TASK_WORKFLOWS } from "@/lib/workflows";
+import type { WorkflowStage } from "@/lib/workflows";
 
 const TYPE_OPTIONS: {
   value: string;
@@ -485,20 +487,45 @@ export function CreateTaskWizard() {
                   {/* Journey preview */}
                   <div className="card-base p-5">
                     <h3 className="text-sm font-semibold text-foreground mb-4">Your learning journey</h3>
-                    <div className="flex items-center justify-center gap-2">
-                      <JourneyStage label="Learn" color="bg-mode-learn" />
-                      <ChevronRight size={16} className="text-muted-foreground" />
-                      <JourneyStage label="Practice" color="bg-mode-practice" />
-                      <ChevronRight size={16} className="text-muted-foreground" />
-                      <JourneyStage label="Master" color="bg-mode-master" />
-                    </div>
+                    {(() => {
+                      const stages = TASK_WORKFLOWS[type] || TASK_WORKFLOWS.lesson;
+                      const isLong = stages.length >= 5;
+
+                      if (isLong) {
+                        return (
+                          <div className="space-y-2">
+                            {stages.map((stage, idx) => (
+                              <div key={stage.key}>
+                                {idx > 0 && (
+                                  <div className="flex justify-center py-1">
+                                    <ChevronDown size={14} className="text-muted-foreground" />
+                                  </div>
+                                )}
+                                <JourneyStage stage={stage} vertical />
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {stages.map((stage, idx) => (
+                            <div key={stage.key} className="flex items-center gap-2">
+                              {idx > 0 && <ChevronRight size={16} className="text-muted-foreground shrink-0" />}
+                              <JourneyStage stage={stage} />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Create button */}
                   <button
                     onClick={handleSubmit}
                     disabled={loading || !title || !finalSubject || !type || !difficulty}
-                    className="btn-primary w-full h-12 text-base"
+                    className="btn-primary w-full h-12 text-base hover:cursor-pointer"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -563,13 +590,29 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function JourneyStage({ label, color }: { label: string; color: string }) {
+function JourneyStage({ stage, vertical }: { stage: WorkflowStage; vertical?: boolean }) {
+  const Icon = stage.icon;
+
+  if (vertical) {
+    return (
+      <div className="flex items-start gap-3">
+        <div className={`w-9 h-9 rounded-xl ${stage.color} flex items-center justify-center shrink-0 mt-0.5`}>
+          <Icon size={15} className="text-white" />
+        </div>
+        <div className="min-w-0">
+          <span className="text-sm font-medium text-foreground">{stage.label}</span>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{stage.description}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center`}>
-        <GraduationCap size={16} className="text-white" />
+      <div className={`w-10 h-10 rounded-xl ${stage.color} flex items-center justify-center`}>
+        <Icon size={16} className="text-white" />
       </div>
-      <span className="text-xs font-medium text-foreground">{label}</span>
+      <span className="text-xs font-medium text-foreground text-center">{stage.label}</span>
     </div>
   );
 }

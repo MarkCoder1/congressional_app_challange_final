@@ -165,7 +165,7 @@ export default function ValidationStage({
         <button
           onClick={handleFinalSubmission}
           disabled={submitting || !finalOutput?.trim()}
-          className="w-full py-4 bg-accent hover:bg-accent/90 text-white font-semibold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          className="w-full py-4 bg-accent hover:cursor-pointer hover:bg-accent/90 text-white font-semibold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
           {submitting ? "AI is Grading..." : "Submit for Final Review"}
         </button>
