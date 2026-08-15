@@ -27,14 +27,14 @@ export function QuickActions({ hasTasks, topTaskId }: QuickActionsProps) {
       color: "bg-accent/10 text-accent hover:bg-accent/20",
       enabled: true,
     },
-    {
-      label: "Review Progress",
-      description: "Check your learning insights",
-      icon: BarChart3,
-      href: "/insights",
-      color: "bg-accent/10 text-accent hover:bg-accent/20",
-      enabled: true,
-    },
+    // {
+    //   label: "Review Progress",
+    //   description: "Check your learning insights",
+    //   icon: BarChart3,
+    //   href: "/insights",
+    //   color: "bg-accent/10 text-accent hover:bg-accent/20",
+    //   enabled: true,
+    // },
   ];
 
   return (
