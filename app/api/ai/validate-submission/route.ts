@@ -3,9 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
-// Use require for pdf-parse (CommonJS) – fixes TypeScript call signature error
-// @ts-ignore
-const pdfParse = require("pdf-parse");
+
+// pdf-parse@2 bundles the browser-only pdfjs-dist canvas renderer, which
+// evaluates `new DOMMatrix` at module scope and relies on the native
+// `@napi-rs/canvas` package to polyfill `globalThis.DOMMatrix` first. When the
+// bundler/Vercel build cannot load that native module, importing it (as this
+// route did at top level) crashes during `next build` page-data collection.
+// Use pdfjs-dist's Node-compatible `legacy` build directly instead, imported
+// lazily so it is never evaluated at build time and text extraction works with
+// no browser APIs. pdfjs-dist + @napi-rs/canvas are kept external to the
+// server bundle via `serverExternalPackages` in next.config.ts.
+let pdfjsModulePromise: Promise<typeof import("pdfjs-dist/legacy/build/pdf.mjs")> | null = null;
+function loadPdfjs() {
+  if (!pdfjsModulePromise) {
+    pdfjsModulePromise = import("pdfjs-dist/legacy/build/pdf.mjs");
+  }
+  return pdfjsModulePromise;
+}
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
@@ -30,8 +44,34 @@ interface SubmissionPayload {
 
 async function extractTextFromPDF(base64Data: string): Promise<string> {
   const buffer = Buffer.from(base64Data, "base64");
-  const data = await pdfParse(buffer);
-  return data.text;
+  const pdfjs = await loadPdfjs();
+  const pdf = await pdfjs.getDocument({
+    data: new Uint8Array(buffer),
+    disableFontFace: true,
+    useSystemFonts: false,
+    isEvalSupported: false,
+  }).promise;
+
+  const pageTexts: string[] = [];
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      let pageText = "";
+      for (const item of content.items) {
+        if ("str" in item) {
+          pageText += item.str;
+          if (item.hasEOL) {
+            pageText += "\n";
+          }
+        }
+      }
+      pageTexts.push(pageText);
+    }
+  } finally {
+    await pdf.destroy();
+  }
+  return pageTexts.join("\n");
 }
 
 async function extractTextFromDocx(base64Data: string): Promise<string> {
