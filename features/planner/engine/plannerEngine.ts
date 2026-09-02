@@ -55,23 +55,23 @@ export function buildPlannerState(
   const overdue = calculateOverdue(normalizedTasks, referenceDate);
   const analytics = calculateAnalytics(normalizedTasks, referenceDate);
 
-  // ── Phase 6: Build learning profile from all tasks ──
+  // Build learning profile from all tasks
   const learningProfile = buildLearningProfile(normalizedTasks);
   const subjectInsights: SubjectInsight[] = buildSubjectInsightsFromProfile(learningProfile, normalizedTasks);
 
-  // ── Phase 6: Priority engine now uses learning profile ──
+  // Priority engine using the user's learning profile 
   const priorityScores: TaskPriorityScore[] = normalizedTasks.map((task) => {
     const result = calculateTaskPriority(task, learningProfile);
-    return {
-      taskId: task.id,
-      score: result.score,
-      reasons: result.reasons
-        .filter((r: PriorityReason) => r.weight > 0)
-        .map((r: PriorityReason) => r.reason),
-    };
+      return {
+        taskId: task.id,
+        score: result.score,
+        reasons: result.reasons
+          .filter((r: PriorityReason) => r.weight > 0)
+          .map((r: PriorityReason) => r.reason),
+      };
   });
 
-  // ── Phase 6: Recommendation engine with feedback record ──
+  // Recommendation engine with feedback record 
   const nextActionData = generateNextAction(normalizedTasks);
   let nextAction: NextActionResult | null = null;
   if (nextActionData) {

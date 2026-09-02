@@ -56,7 +56,7 @@ export function LearningStatusCard({
             className="h-full bg-gradient-to-r from-accent to-accent/70 rounded-full"
           />
         </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
+        {/* <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
           <span className="flex items-center gap-1 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             {currentStage}
@@ -67,7 +67,7 @@ export function LearningStatusCard({
               ~{remainingMinutes}m left
             </span>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Learning Journey */}

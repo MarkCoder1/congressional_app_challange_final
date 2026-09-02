@@ -100,9 +100,9 @@ export function AIFeedback({ mode, subject, score, answers, weakAreas }: AIFeedb
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-3">
         <Bot className="w-4 h-4 text-primary" />
-        <h3 className="font-semibold text-sm text-secondary">AI Insights</h3>
+        <h3 className="font-semibold text-sm text-black">Learning Insights</h3>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-black">
         {insights.map((insight, index) => {
           const Icon = insightIcons[index % insightIcons.length];
           const color = insightColors[index % insightColors.length];
@@ -112,11 +112,11 @@ export function AIFeedback({ mode, subject, score, answers, weakAreas }: AIFeedb
           return (
             <div
               key={index}
-              className={`${bgColor} rounded-lg p-3 border ${borderColor}`}
+              className={`text-black ${bgColor} rounded-lg p-3 border ${borderColor}`}
             >
               <div className="flex items-start gap-2">
                 <Icon className={`w-4 h-4 ${color} flex-shrink-0 mt-0.5`} />
-                <p className="text-xs text-secondary leading-relaxed">{insight}</p>
+                <p className="text-xs text-black leading-relaxed">{insight}</p>
               </div>
             </div>
           );

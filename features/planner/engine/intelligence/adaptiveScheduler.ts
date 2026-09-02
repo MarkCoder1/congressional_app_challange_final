@@ -182,7 +182,7 @@ function findBestDay(
     const currentMinutes = dailyMinutes.get(key) ?? 0;
     if (currentMinutes < maxDaily) {
       return key;
-    }
+    }``
   }
 
   return null;

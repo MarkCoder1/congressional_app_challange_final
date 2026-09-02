@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
+import { ACTIVE_MODEL } from "@/lib/ai/model";
 
 // pdf-parse@2 bundles the browser-only pdfjs-dist canvas renderer, which
 // evaluates `new DOMMatrix` at module scope and relies on the native
@@ -165,7 +166,7 @@ Be strict but fair. Consider completeness, accuracy, use of sources, originality
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: ACTIVE_MODEL,
       temperature: 0.4,
       response_format: { type: "json_object" },
     });

@@ -45,6 +45,7 @@ import type { LearningStats, UnderstandingFeedback, LearningReport } from "@/lib
 import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer";
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
+import { FloatingNotebook } from "@/components/floating-notebook";
 
 import { LearningStatusCard } from "@/components/task-workspace/LearningStatusCard";
 import { CompletionCelebration } from "@/components/task-workspace/CompletionCelebration";
@@ -287,7 +288,7 @@ export default function TaskWorkspaceClient({
   const getNextAction = (): NextAction | null => {
     if (isCompleted) return null;
     if (!learnCompleted) return { label: "Start by learning the concept", action: "Start Learning", targetTab: "Learn" };
-    if (!practiceCompleted) return { label: "Complete Practice Questions", action: "Continue Practice", targetTab: "Practice" };
+    if (!practiceCompleted) return { label: "Complete Practice", action: "Continue Practice", targetTab: "Practice" };
     if (!masterCompleted) return { label: "Take Master Test", action: "Start Test", targetTab: "Master" };
     if (hasAssignment && !isCompleted) return { label: "Complete your assignment", action: "Open Assignment", targetTab: "Assignment" };
     return null;
@@ -320,8 +321,8 @@ export default function TaskWorkspaceClient({
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold text-foreground">{task.title}</h1>
-              <span className="badge-accent">{task.subject}</span>
-              <span className={`badge ${statusPillClassMap[task.status]}`}>
+              <span className="badge-accent px-1 py-1 rounded-md">{task.subject}</span>
+              <span className={`badge ${statusPillClassMap[task.status]} px-1 py-1 rounded-md`}>
                 {statusLabelMap[task.status]}
               </span>
             </div>
@@ -339,6 +340,7 @@ export default function TaskWorkspaceClient({
             onTaskRefresh={refreshTask}
           />
         </div>
+        <FloatingNotebook taskId={task.id} taskTitle={task.title} />
       </div>
     );
   }
@@ -414,12 +416,12 @@ export default function TaskWorkspaceClient({
                       {taskData.title}
                     </h1>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="badge-accent">{taskData.subject}</span>
-                      <span className={`badge ${statusPillClassMap[task.status]}`}>
+                      <span className="badge-accent px-2 py-1 rounded-md">{taskData.subject}</span>
+                      <span className={`badge-accent px-2 py-1 rounded-md`}>
                         {statusLabelMap[task.status]}
                       </span>
                       {currentStage !== "Completed" && (
-                        <span className="badge-accent">{currentStage}</span>
+                        <span className="badge-accent px-1 py-1 rounded-md">{currentStage}</span>
                       )}
                     </div>
                   </div>
@@ -688,6 +690,7 @@ export default function TaskWorkspaceClient({
         </div>
       </motion.div>
         </div>
+        <FloatingNotebook taskId={task.id} taskTitle={task.title} />
       </div>
     </PageTransition>
   );

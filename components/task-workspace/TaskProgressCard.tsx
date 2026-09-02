@@ -65,14 +65,14 @@ export function TaskProgressCard({
           <span className="text-xs text-muted-foreground">Current</span>
           <p className="text-sm font-semibold text-foreground">{currentStage}</p>
         </div>
-        {remainingMinutes > 0 && (
+        {/* {remainingMinutes > 0 && (
           <>
             <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
               <Clock size={12} />
               <span>~{remainingMinutes} min left</span>
             </div>
           </>
-        )}
+        )} */}
       </div>
 
       {/* Completed Activities */}

@@ -35,12 +35,12 @@ export function NextRecommendedAction({
   // Use adaptive next action if we have learning state
   const adaptiveAction = practiceScore !== undefined || masterScore !== undefined
     ? getAdaptiveNextAction(
-        learnCompleted ?? false,
-        practiceCompleted ?? false,
-        masterCompleted ?? false,
-        practiceScore,
-        masterScore
-      )
+      learnCompleted ?? false,
+      practiceCompleted ?? false,
+      masterCompleted ?? false,
+      practiceScore,
+      masterScore
+    )
     : null;
 
   const displayAction = adaptiveAction || nextAction;
@@ -64,18 +64,23 @@ export function NextRecommendedAction({
           <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-1">
             Your Next Step
           </p>
+
           <p className="text-sm sm:text-base font-bold text-foreground mb-3">
             {displayAction.label}
           </p>
-          <button
-            onClick={() => onStartAction(displayAction.targetTab)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all duration-200 shadow-sm shadow-accent/20 hover:shadow-md hover:shadow-accent/30 active:scale-[0.98]"
-          >
-            <ActionIcon size={15} />
-            {displayAction.action}
-            <ArrowRight size={14} />
-          </button>
+
+          <div className="flex justify-center">
+            <button
+              onClick={() => onStartAction(displayAction.targetTab)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all duration-200 shadow-sm shadow-accent/20 hover:shadow-md hover:shadow-accent/30 active:scale-[0.98]"
+            >
+              <ActionIcon size={15} />
+              {displayAction.action}
+              <ArrowRight size={14} />
+            </button>
+          </div>
         </div>
+
       </div>
     </motion.div>
   );

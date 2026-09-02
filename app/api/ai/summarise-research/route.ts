@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { ACTIVE_MODEL } from "@/lib/ai/model";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
@@ -18,7 +19,7 @@ Return ONLY a JSON object: { "summary": "string with bullet points using •" }
 `;
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: ACTIVE_MODEL,
       temperature: 0.3,
       response_format: { type: "json_object" },
     });

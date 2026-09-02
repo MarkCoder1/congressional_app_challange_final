@@ -358,6 +358,7 @@ export async function POST(request: NextRequest) {
       subject: body.subject,
       description: body.description,
       type: body.type === "assignment" ? "assignment" : "lesson",
+      difficulty: body.difficulty,
     });
 
     console.log("[create-task route] task content generated", {
@@ -366,6 +367,16 @@ export async function POST(request: NextRequest) {
       practiceCount: generated.practice?.length ?? 0,
       masterCount: generated.master?.length ?? 0,
       hasAssignmentContent: !!generated.assignmentContent,
+    });
+
+    const sanitizedPractice = sanitizeQuestions(generated.practice);
+    const sanitizedMaster = sanitizeQuestions(generated.master);
+    console.log("[TASK DEBUG] questions to persist", {
+      title: body.title,
+      practiceCount: sanitizedPractice.length,
+      masterCount: sanitizedMaster.length,
+      distinctMaster:
+        new Set(sanitizedMaster.map((q) => q.text)).size,
     });
 
     let visualData: VisualData | undefined = undefined;
@@ -438,8 +449,8 @@ export async function POST(request: NextRequest) {
       },
       learningContent: generated.learningContent!,
       learningMaps: generated.learningMaps!,
-      practice: sanitizeQuestions(generated.practice),
-      master: sanitizeQuestions(generated.master),
+      practice: sanitizedPractice,
+      master: sanitizedMaster,
       assignmentContent: generated.assignmentContent,
       resources: body.resources || {},
       assignments: body.assignments || [],

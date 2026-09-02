@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { db } from "@/lib/db";
 import { updateTaskProgress } from "@/lib/tasks";
+import { ACTIVE_MODEL } from "@/lib/ai/model";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -54,7 +55,7 @@ Return ONLY valid JSON:
 `;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: ACTIVE_MODEL,
       temperature: 0.7,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },

@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { VisualData, VisualType, GraphData } from "@/types/visuals";
+import { ACTIVE_MODEL } from "./model";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
@@ -197,8 +198,9 @@ Now, generate the visual data. Return ONLY the JSON object.`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: ACTIVE_MODEL,
       temperature: 0.5,
+      max_completion_tokens: 2048,
       response_format: { type: "json_object" },
     });
 
@@ -310,12 +312,10 @@ Now, generate the visual data. Return ONLY the JSON object.`;
     });
     return visualData;
   } catch (error) {
-    console.error("Visual generation failed:", error);
-    console.error("[generateVisualData] falling back after error", {
-      topic,
-      subject,
-      visualType: visualType || "auto-detect",
-    });
+    console.error(
+      `[AI] visual generation failed for "${topic}" (${subject}) — using fallback visual. Reason:`,
+      error instanceof Error ? error.message : error,
+    );
     return getRichFallbackVisual(topic, subject);
   }
 }
