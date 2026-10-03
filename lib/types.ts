@@ -38,7 +38,7 @@ export type {
 } from "./learningMapPresets";
 
 // Allow any string for subject (more flexible)
-export type Subject = 
+export type Subject =
   | "Math"
   | "History"
   | "Science"
@@ -51,8 +51,13 @@ export type Subject =
   | "Geography"
   | "Chemistry"
   | "Economics"
-  | string;   
-export type TaskType = "concept" | "lesson" | "assignment" | "mixed";
+  | string;
+export type TaskType =
+  | "concept"
+  | "lesson"
+  | "assignment"
+  | "project"
+  | "mixed";
 export type PriorityLevel = "low" | "medium" | "high";
 export type TaskStatus = "not_started" | "in_progress" | "completed";
 

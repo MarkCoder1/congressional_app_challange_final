@@ -42,9 +42,11 @@ export default function TimelinePage() {
         if (cancelled) return;
 
         // Map API Task type to planner-compatible tasks
-        const mapTaskType = (apiType: string): "lesson" | "assignment" | "practice" | "review" | "custom" => {
+        const mapTaskType = (apiType: string): "lesson" | "assignment" | "project" | "practice" | "review" | "custom" => {
           if (apiType === "lesson") return "lesson";
           if (apiType === "assignment") return "assignment";
+          if (apiType === "project") return "project";
+          if (apiType === "exam") return "custom";
           return "custom";
         };
 

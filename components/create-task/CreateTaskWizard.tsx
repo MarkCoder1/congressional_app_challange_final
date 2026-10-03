@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,8 +13,11 @@ import {
   Calendar,
   Sparkles,
   Briefcase,
-  Target,
   ScrollText,
+  GraduationCap,
+  Plus,
+  Pencil,
+  Trash2,
   ChevronRight,
   ChevronDown,
 } from "lucide-react";
@@ -33,8 +36,8 @@ const TYPE_OPTIONS: {
 }[] = [
   { value: "lesson", label: "Lesson", icon: BookOpen, description: "Learn new concepts and skills", mapTo: "lesson" },
   { value: "assignment", label: "Assignment", icon: ScrollText, description: "Complete a graded task", mapTo: "assignment" },
-  { value: "project", label: "Project", icon: Briefcase, description: "Build something hands-on", mapTo: "assignment" },
-  { value: "exam", label: "Exam Preparation", icon: Target, description: "Study and review for a test", mapTo: "lesson" },
+  { value: "project", label: "Project", icon: Briefcase, description: "Build something hands-on", mapTo: "project" },
+  { value: "exam", label: "Exam Preparation", icon: GraduationCap, description: "Study and review for a test", mapTo: "exam" },
 ];
 
 const DIFFICULTY_OPTIONS: {
@@ -62,7 +65,7 @@ const DEADLINE_OPTIONS: { label: string; value: string }[] = [
   { label: "Custom date", value: "custom" },
 ];
 
-const STEPS = [
+const BASE_STEPS = [
   { title: "What are you learning?", subtitle: "Give your learning plan a title" },
   { title: "Choose the subject", subtitle: "Select or enter your subject area" },
   { title: "What type of learning is this?", subtitle: "Choose the format that fits best" },
@@ -71,6 +74,11 @@ const STEPS = [
   { title: "How much time do you need?", subtitle: "Estimate your study time" },
   { title: "When is it due?", subtitle: "Set a deadline or leave it open" },
   { title: "Review your learning plan", subtitle: "Confirm everything looks right" },
+];
+
+const EXAM_STEPS = [
+  { title: "When is your exam?", subtitle: "Set the date of your exam" },
+  { title: "What topics are covered?", subtitle: "Add the chapters or topics for this exam" },
 ];
 
 const slideVariants = {
@@ -112,6 +120,20 @@ export function CreateTaskWizard() {
   const [deadlineOption, setDeadlineOption] = useState("none");
   const [customDate, setCustomDate] = useState("");
 
+  const [examDate, setExamDate] = useState("");
+  const [topics, setTopics] = useState<{ id: string; name: string }[]>([]);
+  const [newTopic, setNewTopic] = useState("");
+  const [editingTopicId, setEditingTopicId] = useState("");
+
+  const isExam = type === "exam";
+
+  const steps = useMemo(() => {
+    if (isExam) {
+      return [...BASE_STEPS.slice(0, 7), ...EXAM_STEPS, BASE_STEPS[7]];
+    }
+    return BASE_STEPS;
+  }, [isExam]);
+
   const goTo = useCallback((next: number) => {
     setDirection(next > step ? 1 : -1);
     setStep(next);
@@ -136,21 +158,56 @@ export function CreateTaskWizard() {
       case 5:
         if (estimatedMinutes === null) newErrors.time = "Select or enter an estimated time";
         break;
+      case 7:
+        if (isExam && !examDate) newErrors.examDate = "Select an exam date";
+        break;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [step, title, subject, customSubject, type, difficulty, estimatedMinutes]);
+  }, [step, title, subject, customSubject, type, difficulty, estimatedMinutes, isExam, examDate]);
 
   const handleNext = useCallback(() => {
     if (!validateStep()) return;
-    if (step < STEPS.length - 1) goTo(step + 1);
-  }, [step, validateStep, goTo]);
+    if (step < steps.length - 1) goTo(step + 1);
+  }, [step, validateStep, goTo, steps.length]);
 
   const handleBack = useCallback(() => {
     if (step > 0) goTo(step - 1);
   }, [step, goTo]);
 
   const finalSubject = isCustom ? customSubject.trim() : (subject || "");
+
+  const topicId = () =>
+    `topic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const addTopic = () => {
+    const name = newTopic.trim();
+    if (!name) return;
+    const editing = topics.find((t) => t.id === editingTopicId);
+    if (editingTopicId && editing) {
+      setTopics((prev) =>
+        prev.map((t) => (t.id === editingTopicId ? { ...t, name } : t)),
+      );
+    } else {
+      setTopics((prev) => [...prev, { id: topicId(), name }]);
+    }
+    setNewTopic("");
+    setEditingTopicId("");
+    setErrors({});
+  };
+
+  const removeTopic = (id: string) => {
+    setTopics((prev) => prev.filter((t) => t.id !== id));
+    if (editingTopicId === id) {
+      setEditingTopicId("");
+      setNewTopic("");
+    }
+  };
+
+  const startEditingTopic = (topic: { id: string; name: string }) => {
+    setEditingTopicId(topic.id);
+    setNewTopic(topic.name);
+  };
 
   const handleSubmit = async () => {
     if (!title || !finalSubject || !type || !difficulty) return;
@@ -174,6 +231,12 @@ export function CreateTaskWizard() {
         deadline,
         difficulty,
         estimatedMinutes: estimatedMinutes || 30,
+        ...(isExam
+          ? {
+              examDate,
+              topics: topics.map((t) => ({ name: t.name })),
+            }
+          : {}),
       };
 
       const res = await fetch("/api/tasks/create", {
@@ -197,7 +260,7 @@ export function CreateTaskWizard() {
     <div className="w-full max-w-lg mx-auto">
       {/* Progress */}
       <div className="flex items-center gap-1.5 mb-8 justify-center">
-        {STEPS.map((_, i) => (
+        {steps.map((_, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <button
               onClick={() => i < step && goTo(i)}
@@ -217,7 +280,7 @@ export function CreateTaskWizard() {
 
       {/* Step indicator */}
       <p className="text-center text-xs text-muted-foreground font-medium mb-6">
-        Step {step + 1} of {STEPS.length}
+        Step {step + 1} of {steps.length}
       </p>
 
       {/* Step content */}
@@ -235,10 +298,10 @@ export function CreateTaskWizard() {
             {/* Step header */}
             <div className="text-center mb-8">
               <h2 className="text-xl font-semibold text-foreground mb-1.5">
-                {STEPS[step].title}
+                {steps[step].title}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {STEPS[step].subtitle}
+                {steps[step].subtitle}
               </p>
             </div>
 
@@ -462,7 +525,101 @@ export function CreateTaskWizard() {
                 </div>
               )}
 
-              {step === 7 && (
+              {step === 7 && isExam && (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      type="date"
+                      value={examDate}
+                      onChange={(e) => { setExamDate(e.target.value); setErrors({}); }}
+                      className="input-base pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The date of your exam. This is required so we can track the time you have to prepare.
+                  </p>
+                  {errors.examDate && (
+                    <p className="text-xs text-error ml-1">{errors.examDate}</p>
+                  )}
+                </div>
+              )}
+
+              {step === 8 && isExam && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        autoFocus
+                        placeholder="Add a topic, e.g. Chemical Reactions"
+                        value={newTopic}
+                        onChange={(e) => setNewTopic(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addTopic();
+                          }
+                        }}
+                        className="input-base flex-1"
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        onClick={addTopic}
+                        disabled={loading}
+                        className="btn-secondary shrink-0"
+                        aria-label="Add topic"
+                      >
+                        <Plus size={16} />
+                        Add Topic
+                      </button>
+                    </div>
+                    {topics.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No topics added yet. Add the chapters or topics covered by this exam.
+                      </p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {topics.map((topic) => (
+                          <li
+                            key={topic.id}
+                            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2"
+                          >
+                            <span className="flex-1 min-w-0 text-sm text-foreground">
+                              {topic.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => startEditingTopic(topic)}
+                              disabled={loading}
+                              className="p-1 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+                              aria-label={`Edit ${topic.name}`}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeTopic(topic.id)}
+                              disabled={loading}
+                              className="p-1 rounded-md text-muted-foreground hover:bg-secondary hover:text-destructive"
+                              aria-label={`Delete ${topic.name}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can edit or remove topics. {topics.length} topic{topics.length === 1 ? "" : "s"} added.
+                  </p>
+                </div>
+              )}
+
+              {step === (isExam ? 9 : 7) && (
                 <div className="space-y-5">
                   {/* Summary card */}
                   <div className="card-base p-5 space-y-4">
@@ -481,6 +638,12 @@ export function CreateTaskWizard() {
                         deadlineOption === "this-week" ? "This week" :
                         deadlineOption === "custom" && customDate ? new Date(customDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""
                       } />
+                      {isExam && (
+                        <>
+                          <SummaryRow label="Exam date" value={examDate ? new Date(examDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""} />
+                          <SummaryRow label="Topics" value={topics.length > 0 ? `${topics.length} topic${topics.length === 1 ? "" : "s"}` : "None"} />
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -524,7 +687,7 @@ export function CreateTaskWizard() {
                   {/* Create button */}
                   <button
                     onClick={handleSubmit}
-                    disabled={loading || !title || !finalSubject || !type || !difficulty}
+                    disabled={loading || !title || !finalSubject || !type || !difficulty || (isExam && !examDate)}
                     className="btn-primary w-full h-12 text-base hover:cursor-pointer"
                   >
                     {loading ? (
@@ -550,7 +713,7 @@ export function CreateTaskWizard() {
       </div>
 
       {/* Navigation */}
-      {step < STEPS.length - 1 && (
+      {step < steps.length - 1 && (
         <div className="flex items-center justify-between mt-8">
           <button
             onClick={handleBack}
@@ -566,7 +729,7 @@ export function CreateTaskWizard() {
           </button>
         </div>
       )}
-      {step === STEPS.length - 1 && (
+      {step === steps.length - 1 && (
         <div className="flex items-center justify-start mt-8">
           <button
             onClick={handleBack}

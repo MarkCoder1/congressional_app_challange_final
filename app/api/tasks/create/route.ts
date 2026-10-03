@@ -1,7 +1,7 @@
 // /app/api/tasks/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createTask } from "@/lib/tasks";
-import { Task, TaskType } from "@/types/task";
+import { ProjectContent, Task, TaskType } from "@/types/task";
 import { generateTaskContent } from "@/lib/ai/generateTaskContent";
 import { generateVisualData } from "@/lib/ai/generateVisualData";
 import { randomUUID } from "crypto";
@@ -26,6 +26,73 @@ function sanitizeQuestions(questions: any[] = []) {
     };
   });
 }
+
+function normalizeExamTopics(topics: unknown): {
+  id: string;
+  name: string;
+  status: "not_assessed";
+}[] {
+  if (!Array.isArray(topics)) return [];
+  return topics
+    .filter((t) => {
+      const item = t as { name?: unknown };
+      return !!item && typeof item.name === "string" && item.name.trim().length > 0;
+    })
+    .map((t) => {
+      const item = t as { id?: string; name?: unknown };
+      return {
+        id: item.id || randomUUID(),
+        name: String(item.name).trim(),
+        status: "not_assessed" as const,
+      };
+    });
+}
+
+const PROJECT_STAGES: ProjectContent["stages"] = [
+  {
+    key: "plan",
+    label: "Plan",
+    description: "Define goals and break into milestones",
+  },
+  {
+    key: "research",
+    label: "Research",
+    description: "Explore tools, examples, and resources",
+  },
+  {
+    key: "design",
+    label: "Design",
+    description: "Shape the approach and intended result",
+  },
+  {
+    key: "build",
+    label: "Build",
+    description: "Create and iterate on your project",
+  },
+  {
+    key: "test",
+    label: "Test",
+    description: "Check that your project works as intended",
+  },
+  {
+    key: "improve",
+    label: "Improve",
+    description: "Refine the project using what you learn",
+  },
+  {
+    key: "finalize",
+    label: "Finalize",
+    description: "Prepare the finished project to share",
+  },
+];
+
+const EMPTY_LEARNING_CONTENT = {
+  overview:
+    "Your project workspace will guide you through each stage of the project.",
+  keyPoints: [],
+  example: "",
+  steps: [],
+};
 
 // ========== TREEMAP CONVERSION ==========
 function convertToTreemapData(obj: Record<string, any>): TreemapNode[] {
@@ -347,19 +414,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isProject = body.type === "project";
+    const isExam = body.type === "exam";
     console.log("[create-task route] generating task content", {
       title: body.title,
       subject: body.subject,
-      taskType: body.type === "assignment" ? "assignment" : "lesson",
+      taskType: isProject
+        ? "project"
+        : isExam
+          ? "exam"
+          : body.type === "assignment"
+            ? "assignment"
+            : "lesson",
     });
 
-    const generated = await generateTaskContent({
-      title: body.title,
-      subject: body.subject,
-      description: body.description,
-      type: body.type === "assignment" ? "assignment" : "lesson",
-      difficulty: body.difficulty,
-    });
+    const generated: Partial<Task> = isProject
+      ? {
+          learningContent: EMPTY_LEARNING_CONTENT,
+          learningMaps: [],
+          practice: [],
+          master: [],
+          projectContent: { stages: PROJECT_STAGES },
+        }
+        : isExam
+        ? {
+            learningContent: EMPTY_LEARNING_CONTENT,
+            learningMaps: [],
+            practice: [],
+            master: [],
+            examContent: {
+              examDate: body.examDate || undefined,
+              topics: normalizeExamTopics(body.topics),
+              preparationProgress: 0,
+            },
+          }
+        : await generateTaskContent({
+            title: body.title,
+            subject: body.subject,
+            description: body.description,
+            type: body.type === "assignment" ? "assignment" : "lesson",
+            difficulty: body.difficulty,
+          });
 
     console.log("[create-task route] task content generated", {
       hasLearningContent: !!generated.learningContent,
@@ -375,33 +470,34 @@ export async function POST(request: NextRequest) {
       title: body.title,
       practiceCount: sanitizedPractice.length,
       masterCount: sanitizedMaster.length,
-      distinctMaster:
-        new Set(sanitizedMaster.map((q) => q.text)).size,
+      distinctMaster: new Set(sanitizedMaster.map((q) => q.text)).size,
     });
 
     let visualData: VisualData | undefined = undefined;
-    try {
-      console.log(
-        "[create-task route] generating visualData via generateVisualData",
-        {
-          title: body.title,
+    if (!isProject && !isExam) {
+      try {
+        console.log(
+          "[create-task route] generating visualData via generateVisualData",
+          {
+            title: body.title,
+            subject: body.subject,
+          },
+        );
+        visualData = await generateVisualData({
+          topic: body.title,
           subject: body.subject,
-        },
-      );
-      visualData = await generateVisualData({
-        topic: body.title,
-        subject: body.subject,
-        description: body.description,
-      });
-      console.log("[create-task route] generateVisualData result", {
-        visualType: visualData?.type,
-      });
-    } catch (err) {
-      console.error("[create-task route] generateVisualData failed", err);
-      visualData = undefined;
+          description: body.description,
+        });
+        console.log("[create-task route] generateVisualData result", {
+          visualType: visualData?.type,
+        });
+      } catch (err) {
+        console.error("[create-task route] generateVisualData failed", err);
+        visualData = undefined;
+      }
     }
 
-    if (!visualData) {
+    if (!visualData && !isProject && !isExam) {
       console.warn(
         "[create-task route] no visual data generated, using fallback process visual",
       );
@@ -435,7 +531,13 @@ export async function POST(request: NextRequest) {
       title: body.title,
       subject: body.subject,
       description: body.description,
-      type: (body.type === "assignment" ? "assignment" : "lesson") as TaskType,
+      type: (isProject
+        ? "project"
+        : isExam
+          ? "exam"
+          : body.type === "assignment"
+            ? "assignment"
+            : "lesson") as TaskType,
       deadline: body.deadline || null,
       difficulty: body.difficulty || "medium",
       estimatedMinutes: body.estimatedMinutes ?? undefined,
@@ -452,7 +554,16 @@ export async function POST(request: NextRequest) {
       practice: sanitizedPractice,
       master: sanitizedMaster,
       assignmentContent: generated.assignmentContent,
-      resources: body.resources || {},
+      examContent: generated.examContent,
+      resources: {
+        ...(body.resources || {}),
+        ...(generated.projectContent
+          ? { projectContent: generated.projectContent }
+          : {}),
+        ...(generated.examContent
+          ? { examContent: generated.examContent }
+          : {}),
+      },
       assignments: body.assignments || [],
       visualData: visualData,
     };

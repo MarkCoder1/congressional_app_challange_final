@@ -97,6 +97,8 @@ export function createTask(task: Task) {
     deadline: task.deadline,
     progress: task.progress ?? 0,
     learningContent: task.learningContent,
+    ...(task.projectContent ? { projectContent: task.projectContent } : {}),
+    ...(task.examContent ? { examContent: task.examContent } : {}),
   };
 
   const normalizedStatus = normalizeTaskStatus(task.status, task.progress);
@@ -175,6 +177,8 @@ export function getTaskById(id: string): Task | null {
     assignments,
     visualData,
     assignmentContent,
+    projectContent: resources.projectContent,
+    examContent: resources.examContent,
     difficulty: (row.difficulty as Task["difficulty"]) ?? undefined,
     estimatedMinutes: row.estimated_minutes ?? undefined,
   };
@@ -186,6 +190,8 @@ function persistTaskProgress(id: string, task: Task): void {
     deadline: task.deadline,
     progress: task.progress,
     learningContent: task.learningContent,
+    ...(task.projectContent ? { projectContent: task.projectContent } : {}),
+    ...(task.examContent ? { examContent: task.examContent } : {}),
   };
 
   db.prepare(
@@ -266,6 +272,42 @@ export function resetTask(id: string): Task | null {
   return getTaskById(id);
 }
 
+/**
+ * Updates the `examContent` blob for an exam task in place, preserving all
+ * other task fields (progress, learning content, resources, etc.). Exposed for
+ * the Exam Preparation / Diagnostic flows which persist within the existing
+ * task `resources` structure rather than creating a separate store.
+ */
+export function updateTaskExamContent(
+  id: string,
+  updater: (examContent: NonNullable<Task["examContent"]>) => NonNullable<
+    Task["examContent"]
+  >,
+): Task | null {
+  const currentTask = getTaskById(id);
+  if (!currentTask) return null;
+
+  const nextExamContent = updater(currentTask.examContent ?? {
+    topics: [],
+    preparationProgress: 0,
+  });
+
+  const nextResources = {
+    ...currentTask.resources,
+    ...(currentTask.examContent ? { examContent: currentTask.examContent } : {}),
+    examContent: nextExamContent,
+    deadline: currentTask.deadline,
+    progress: currentTask.progress,
+    learningContent: currentTask.learningContent,
+  };
+
+  db.prepare(
+    `UPDATE tasks SET resources = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+  ).run(JSON.stringify(nextResources), id);
+
+  return getTaskById(id);
+}
+
 // ========== Get All Tasks ==========
 export function getAllTasks(): Task[] {
   const rows = db
@@ -308,6 +350,7 @@ export function getAllTasks(): Task[] {
       assignments,
       visualData,
       assignmentContent,
+      examContent: resources.examContent,
       difficulty: (row.difficulty as Task["difficulty"]) ?? undefined,
       estimatedMinutes: row.estimated_minutes ?? undefined,
     };

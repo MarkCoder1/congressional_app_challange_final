@@ -1,6 +1,7 @@
 export type PlannerTaskType =
   | "lesson"
   | "assignment"
+  | "project"
   | "practice"
   | "review"
   | "custom";

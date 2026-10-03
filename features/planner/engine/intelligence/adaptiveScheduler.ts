@@ -167,7 +167,7 @@ function findBestDay(
   for (let offset = startOffset; offset <= horizonDays; offset++) {
     const candidate = addPlannerDays(referenceDate, offset);
     const key = formatPlannerDateKey(candidate);
-
+    
     // If there's a deadline, don't schedule after it
     if (deadline && candidate.getTime() > deadline.getTime()) {
       // Try the deadline day itself

@@ -33,6 +33,8 @@ export function getTaskTypeLabel(taskType: string): string {
       return "Lesson";
     case "assignment":
       return "Assignment";
+    case "project":
+      return "Project";
     case "mixed":
       return "Mixed";
     default:
@@ -90,6 +92,12 @@ export function getTaskTypeStyle(taskType: string): {
         badge: "bg-ai-violet-tint text-ai-violet",
         icon: "✍️",
         color: "purple",
+      };
+    case "project":
+      return {
+        badge: "bg-warning-tint text-warning",
+        icon: "📁",
+        color: "orange",
       };
     case "mixed":
       return {

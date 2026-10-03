@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test lib/questions/evaluate.test.ts lib/questions/evaluate.visual.test.ts lib/adaptive/engine.test.ts lib/exam/spacedReview.test.ts lib/exam/studyPlan.test.ts lib/exam/integration.test.ts lib/exam/phase66.test.ts"
   },
   "dependencies": {
     "@nivo/heatmap": "^0.99.0",

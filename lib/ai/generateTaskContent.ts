@@ -22,7 +22,7 @@ interface FallbackContent {
 // The cap must ALSO keep prompt + completion under the org's tokens-per-minute
 // budget (free tier: 8k TPM rejects oversized requests with 413 before
 // generation even starts), so it is intentionally modest.
-const MAX_COMPLETION_TOKENS = 5500;
+export const MAX_COMPLETION_TOKENS = 5500;
 const RATE_LIMIT_BACKOFF_MS = 21_000;
 
 function isRateLimitError(error: unknown): boolean {
@@ -38,7 +38,7 @@ function isRateLimitError(error: unknown): boolean {
 }
 
 /** Chat completion with backoff-retry on per-minute rate limit rejections. */
-async function createCompletionWithRetry(
+export async function createCompletionWithRetry(
   params: Parameters<Groq["chat"]["completions"]["create"]>[0],
 ): Promise<ChatCompletion> {
   let lastError: unknown;
@@ -62,14 +62,14 @@ async function createCompletionWithRetry(
 
 // groq-sdk surfaces provider errors as { status, error: { code, failed_generation } }.
 // failed_generation contains the raw model output even when JSON validation failed.
-function extractFailedGeneration(error: unknown): string | null {
+export function extractFailedGeneration(error: unknown): string | null {
   const anyErr = error as any;
   const raw =
     anyErr?.error?.failed_generation ?? anyErr?.failed_generation ?? null;
   return typeof raw === "string" && raw.length > 0 ? raw : null;
 }
 
-function isJsonValidateError(error: unknown): boolean {
+export function isJsonValidateError(error: unknown): boolean {
   return (
     (error as any)?.error?.code === "json_validate_failed" ||
     (error as any)?.code === "json_validate_failed"
@@ -84,7 +84,7 @@ function isJsonValidateError(error: unknown): boolean {
  * closers are still open. This salvages e.g. a truncated "master" array
  * without discarding the valid sections that precede it.
  */
-function parseGeneratedJson(rawInput: string): any | null {
+export function parseGeneratedJson(rawInput: string): any | null {
   if (!rawInput || !rawInput.trim()) return null;
 
   // Strip markdown fences / prose around the payload.

@@ -14,6 +14,8 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  FolderKanban,
+  GraduationCap,
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   Sparkles,
@@ -85,7 +87,7 @@ export function Sidebar() {
   }, []);
 
   const { lessonTasks, assignmentTasks } = useMemo(() => {
-    const lessons = tasks.filter(task => task.type === "lesson");
+    const lessons = tasks.filter(task => task.type === "lesson" || task.type === "project" || task.type === "exam");
     const assignments = tasks.filter(task => task.type === "assignment");
     return { lessonTasks: lessons, assignmentTasks: assignments };
   }, [tasks]);
@@ -224,7 +226,13 @@ export function Sidebar() {
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <BookOpen size={14} className="flex-shrink-0 text-muted-foreground" />
+                              {task.type === "project" ? (
+                                <FolderKanban size={14} className="shrink-0 text-muted-foreground" />
+                              ) : task.type === "exam" ? (
+                                <GraduationCap size={14} className="shrink-0 text-muted-foreground" />
+                              ) : (
+                                <BookOpen size={14} className="flex-shrink-0 text-muted-foreground" />
+                              )}
                               <span className="text-sm font-medium truncate">{task.title}</span>
                             </div>
                             <span className={`text-xs font-semibold whitespace-nowrap ${progressInfo.color}`}>

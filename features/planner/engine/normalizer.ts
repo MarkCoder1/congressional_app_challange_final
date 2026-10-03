@@ -77,6 +77,7 @@ const PRIORITY_WEIGHT: Record<PlannerPriority, number> = {
 const TYPE_BASE_MINUTES: Record<PlannerTaskType, number> = {
   lesson: 45,
   assignment: 90,
+  project: 120,
   practice: 30,
   review: 20,
   custom: 30,
@@ -111,6 +112,8 @@ function normalizeTaskType(type: string | null | undefined): PlannerTaskType {
       return "lesson";
     case "assignment":
       return "assignment";
+    case "project":
+      return "project";
     case "practice":
       return "practice";
     case "review":
@@ -504,63 +507,69 @@ function normalizeMetadata(
     const ld = learningDataSource as Record<string, unknown>;
     const normalized: LearningData = {
       practiceHistory: Array.isArray(ld.practiceHistory)
-        ? ld.practiceHistory
-            .filter(isPlainObject)
-            .map((entry) => ({
-              score:
-                typeof entry.score === "number" && Number.isFinite(entry.score)
-                  ? Math.min(100, Math.max(0, entry.score))
-                  : null,
-              attempts:
-                typeof entry.attempts === "number" && Number.isFinite(entry.attempts)
-                  ? Math.max(0, Math.round(entry.attempts))
-                  : 0,
-              date: typeof entry.date === "string" ? entry.date : new Date().toISOString(),
-              notes: typeof entry.notes === "string" ? entry.notes : undefined,
-            }))
+        ? ld.practiceHistory.filter(isPlainObject).map((entry) => ({
+            score:
+              typeof entry.score === "number" && Number.isFinite(entry.score)
+                ? Math.min(100, Math.max(0, entry.score))
+                : null,
+            attempts:
+              typeof entry.attempts === "number" &&
+              Number.isFinite(entry.attempts)
+                ? Math.max(0, Math.round(entry.attempts))
+                : 0,
+            date:
+              typeof entry.date === "string"
+                ? entry.date
+                : new Date().toISOString(),
+            notes: typeof entry.notes === "string" ? entry.notes : undefined,
+          }))
         : [],
       masteryHistory: Array.isArray(ld.masteryHistory)
-        ? ld.masteryHistory
-            .filter(isPlainObject)
-            .map((entry) => ({
-              score:
-                typeof entry.score === "number" && Number.isFinite(entry.score)
-                  ? Math.min(100, Math.max(0, entry.score))
-                  : null,
-              date: typeof entry.date === "string" ? entry.date : new Date().toISOString(),
-            }))
+        ? ld.masteryHistory.filter(isPlainObject).map((entry) => ({
+            score:
+              typeof entry.score === "number" && Number.isFinite(entry.score)
+                ? Math.min(100, Math.max(0, entry.score))
+                : null,
+            date:
+              typeof entry.date === "string"
+                ? entry.date
+                : new Date().toISOString(),
+          }))
         : [],
       studySessions: Array.isArray(ld.studySessions)
-        ? ld.studySessions
-            .filter(isPlainObject)
-            .map((entry) => ({
-              minutes:
-                typeof entry.minutes === "number" && Number.isFinite(entry.minutes)
-                  ? Math.max(0, entry.minutes)
-                  : 0,
-              date: typeof entry.date === "string" ? entry.date : new Date().toISOString(),
-              notes: typeof entry.notes === "string" ? entry.notes : undefined,
-            }))
+        ? ld.studySessions.filter(isPlainObject).map((entry) => ({
+            minutes:
+              typeof entry.minutes === "number" &&
+              Number.isFinite(entry.minutes)
+                ? Math.max(0, entry.minutes)
+                : 0,
+            date:
+              typeof entry.date === "string"
+                ? entry.date
+                : new Date().toISOString(),
+            notes: typeof entry.notes === "string" ? entry.notes : undefined,
+          }))
         : [],
       assignmentHistory: Array.isArray(ld.assignmentHistory)
-        ? ld.assignmentHistory
-            .filter(isPlainObject)
-            .map((entry) => ({
-              grade:
-                typeof entry.grade === "number" && Number.isFinite(entry.grade)
-                  ? Math.min(100, Math.max(0, entry.grade))
-                  : null,
-              maxGrade:
-                typeof entry.maxGrade === "number" && Number.isFinite(entry.maxGrade)
-                  ? Math.max(0, entry.maxGrade)
-                  : undefined,
-              letterGrade:
-                typeof entry.letterGrade === "string" ? entry.letterGrade : undefined,
-              submittedAt:
-                typeof entry.submittedAt === "string"
-                  ? entry.submittedAt
-                  : new Date().toISOString(),
-            }))
+        ? ld.assignmentHistory.filter(isPlainObject).map((entry) => ({
+            grade:
+              typeof entry.grade === "number" && Number.isFinite(entry.grade)
+                ? Math.min(100, Math.max(0, entry.grade))
+                : null,
+            maxGrade:
+              typeof entry.maxGrade === "number" &&
+              Number.isFinite(entry.maxGrade)
+                ? Math.max(0, entry.maxGrade)
+                : undefined,
+            letterGrade:
+              typeof entry.letterGrade === "string"
+                ? entry.letterGrade
+                : undefined,
+            submittedAt:
+              typeof entry.submittedAt === "string"
+                ? entry.submittedAt
+                : new Date().toISOString(),
+          }))
         : [],
     };
     metadata.learningData = normalized;
@@ -568,7 +577,9 @@ function normalizeMetadata(
 
   // ── Phase 4.5: spacedRepetition ──
   const spacedRepetitionSource =
-    (isPlainObject(input.spacedRepetition) ? input.spacedRepetition : undefined) ||
+    (isPlainObject(input.spacedRepetition)
+      ? input.spacedRepetition
+      : undefined) ||
     (metadataSource && isPlainObject(metadataSource.spacedRepetition)
       ? metadataSource.spacedRepetition
       : undefined);
@@ -594,7 +605,9 @@ function normalizeMetadata(
 
   // ── Phase 4.5: confusionMarkers ──
   const confusionMarkersSource =
-    (Array.isArray(input.confusionMarkers) ? input.confusionMarkers : undefined) ||
+    (Array.isArray(input.confusionMarkers)
+      ? input.confusionMarkers
+      : undefined) ||
     (metadataSource && Array.isArray(metadataSource.confusionMarkers)
       ? metadataSource.confusionMarkers
       : undefined);
@@ -646,11 +659,13 @@ function normalizeMetadata(
       .map((entry) => ({
         topic: typeof entry.topic === "string" ? entry.topic : "unknown",
         flaggedCount:
-          typeof entry.flaggedCount === "number" && Number.isFinite(entry.flaggedCount)
+          typeof entry.flaggedCount === "number" &&
+          Number.isFinite(entry.flaggedCount)
             ? Math.max(0, Math.round(entry.flaggedCount))
             : 1,
         lastMasteryScore:
-          typeof entry.lastMasteryScore === "number" && Number.isFinite(entry.lastMasteryScore)
+          typeof entry.lastMasteryScore === "number" &&
+          Number.isFinite(entry.lastMasteryScore)
             ? Math.min(100, Math.max(0, entry.lastMasteryScore))
             : undefined,
         lastFlaggedAt:
@@ -717,30 +732,27 @@ export function normalizeTask(
       ? Math.max(0, Math.round(input.timeSpentMinutes))
       : undefined;
 
-  const timeEstimateHistorySource =
-    Array.isArray(input.timeEstimateHistory)
-      ? input.timeEstimateHistory
-      : undefined;
+  const timeEstimateHistorySource = Array.isArray(input.timeEstimateHistory)
+    ? input.timeEstimateHistory
+    : undefined;
   const timeEstimateHistory: TimeEstimateEntry[] | undefined =
     timeEstimateHistorySource
-      ? timeEstimateHistorySource
-          .filter(isPlainObject)
-          .map((entry) => ({
-            estimatedMinutes:
-              typeof entry.estimatedMinutes === "number" &&
-              Number.isFinite(entry.estimatedMinutes)
-                ? Math.max(0, Math.round(entry.estimatedMinutes))
-                : 0,
-            actualMinutes:
-              typeof entry.actualMinutes === "number" &&
-              Number.isFinite(entry.actualMinutes)
-                ? Math.max(0, Math.round(entry.actualMinutes))
-                : 0,
-            date:
-              typeof entry.date === "string"
-                ? entry.date
-                : new Date().toISOString(),
-          }))
+      ? timeEstimateHistorySource.filter(isPlainObject).map((entry) => ({
+          estimatedMinutes:
+            typeof entry.estimatedMinutes === "number" &&
+            Number.isFinite(entry.estimatedMinutes)
+              ? Math.max(0, Math.round(entry.estimatedMinutes))
+              : 0,
+          actualMinutes:
+            typeof entry.actualMinutes === "number" &&
+            Number.isFinite(entry.actualMinutes)
+              ? Math.max(0, Math.round(entry.actualMinutes))
+              : 0,
+          date:
+            typeof entry.date === "string"
+              ? entry.date
+              : new Date().toISOString(),
+        }))
       : undefined;
 
   const actualDifficulty =
@@ -754,7 +766,8 @@ export function normalizeTask(
     : undefined;
   const dependencies: string[] | undefined = dependenciesSource
     ? dependenciesSource.filter(
-        (dep): dep is string => typeof dep === "string" && dep.trim().length > 0,
+        (dep): dep is string =>
+          typeof dep === "string" && dep.trim().length > 0,
       )
     : undefined;
 

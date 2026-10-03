@@ -21,7 +21,7 @@ const SUBJECTS: Subject[] = [
   "Spanish",
 ];
 
-const TASK_TYPES: TaskType[] = ["concept", "lesson", "assignment", "mixed"];
+const TASK_TYPES: TaskType[] = ["concept", "lesson", "assignment", "project", "mixed"];
 
 export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
   const [title, setTitle] = useState("");

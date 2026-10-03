@@ -11,6 +11,7 @@ import {
   ArrowRight,
   BookOpen,
   Zap,
+  GraduationCap,
   RefreshCw,
   HelpCircle,
 } from "lucide-react";
@@ -105,7 +106,7 @@ export function NextActionCard({ task, priorityScore }: NextActionCardProps) {
             <span className={`p-1 rounded-md ${taskTypeIcon.color}`}>
               <taskTypeIcon.icon size={16} />
             </span>
-            <span className="text-sm font-semibold capitalize">{task.type}</span>
+            <span className="text-sm font-semibold">{getTaskTypeLabel(task.type)}</span>
           </div>
         </div>
 
@@ -230,12 +231,29 @@ function getPriorityColor(score: number): string {
   return "text-muted-foreground";
 }
 
+function getTaskTypeLabel(type: string): string {
+  switch (type) {
+    case "exam":
+      return "Exam Preparation";
+    case "lesson":
+      return "Lesson";
+    case "assignment":
+      return "Assignment";
+    case "project":
+      return "Project";
+    default:
+      return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+
 function getTaskTypeIcon(type: string) {
   switch (type) {
     case "lesson":
       return { icon: BookOpen, color: "bg-primary-tint text-primary" };
     case "assignment":
       return { icon: Zap, color: "bg-ai-violet-tint text-ai-violet" };
+    case "exam":
+      return { icon: GraduationCap, color: "bg-primary-tint text-primary" };
     default:
       return { icon: RefreshCw, color: "bg-secondary text-muted-foreground" };
   }

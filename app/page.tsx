@@ -63,9 +63,11 @@ export default function Dashboard() {
 
         const mapTaskType = (
           apiType: string,
-        ): "lesson" | "assignment" | "practice" | "review" | "custom" => {
+        ): "lesson" | "assignment" | "project" | "practice" | "review" | "custom" => {
           if (apiType === "lesson") return "lesson";
           if (apiType === "assignment") return "assignment";
+          if (apiType === "project") return "project";
+          if (apiType === "exam") return "custom";
           return "custom";
         };
 

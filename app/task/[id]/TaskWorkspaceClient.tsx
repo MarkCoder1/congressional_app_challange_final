@@ -46,6 +46,8 @@ import { VisualRenderer as NewVisualRenderer } from "@/components/VisualRenderer
 import { VisualRenderer as OldVisualRenderer } from "@/components/visuals/VisualRenderer";
 import AssignmentWorkspace from "@/components/assignment/AssignmentWorkspace";
 import { FloatingNotebook } from "@/components/floating-notebook";
+import { ProjectWorkspace } from "@/components/project/ProjectWorkspace";
+import { ExamPreparationWorkspace } from "@/components/exam/ExamPreparationWorkspace";
 
 import { LearningStatusCard } from "@/components/task-workspace/LearningStatusCard";
 import { CompletionCelebration } from "@/components/task-workspace/CompletionCelebration";
@@ -312,6 +314,14 @@ export default function TaskWorkspaceClient({
         </div>
       </div>
     );
+  }
+
+  if (task.type === "exam") {
+    return <ExamPreparationWorkspace task={task} />;
+  }
+
+  if (task.type === "project") {
+    return <ProjectWorkspace task={task} />;
   }
 
   if (hasAssignment && assignment) {
